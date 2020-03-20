@@ -1,14 +1,14 @@
 [
 {
-  "modid": "examplemod",
-  "name": "Example Mod",
-  "description": "Example placeholder mod.",
+  "modid": "gmwitchcraft",
+  "name": "GameCraft910's Witchcraft",
+  "description": "Witchcraft mod, somewhat inspired by Witchery but different in practice",
   "version": "${version}",
   "mcversion": "${mcversion}",
   "url": "",
   "updateUrl": "",
-  "authorList": ["ExampleDude"],
-  "credits": "The Forge and FML guys, for making this example",
+  "authorList": ["GameCraft910"],
+  "credits": "Minecraft, Forge, and Witchery (Emoniph) for inspiration",
   "logoFile": "",
   "screenshots": [],
   "dependencies": []
