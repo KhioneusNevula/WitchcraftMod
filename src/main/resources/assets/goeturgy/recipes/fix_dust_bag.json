@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "ingredients":
+    [
+        
+        {
+            "type": "forge:ore_dict",
+            "ore": "dustChalk"
+        },
+        
+        {
+            "item": "goeturgy:dust_bag"
+        }
+    ],
+    "result":
+    {
+        "item": "goeturgy:dust_bag",
+        "count": 1,
+        "data": 0
+    }
+}

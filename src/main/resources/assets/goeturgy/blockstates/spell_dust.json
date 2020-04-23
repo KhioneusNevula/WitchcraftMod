@@ -1,0 +1,29 @@
+{
+    "variants": {
+        "ishead=true,symbol=0": { "model": "goeturgy:head_symbol" },
+        "ishead=true,symbol=1": { "model": "goeturgy:head_symbol" },
+        
+        "ishead=true,symbol=2": { "model": "goeturgy:head_symbol" },
+        
+        "ishead=true,symbol=3": { "model": "goeturgy:head_symbol" },
+        
+        "ishead=true,symbol=4": { "model": "goeturgy:head_symbol" },
+        
+        "ishead=true,symbol=5": { "model": "goeturgy:head_symbol" },
+        
+        "ishead=true,symbol=6": { "model": "goeturgy:head_symbol" },
+        
+        "ishead=false,symbol=0": { "model": "goeturgy:symbol1" },
+        "ishead=false,symbol=1": { "model": "goeturgy:symbol2" },
+        
+        "ishead=false,symbol=2": { "model": "goeturgy:symbol3" },
+        
+        "ishead=false,symbol=3": { "model": "goeturgy:symbol4" },
+        
+        "ishead=false,symbol=4": { "model": "goeturgy:symbol5" },
+        
+        "ishead=false,symbol=5": { "model": "goeturgy:symbol6" },
+        
+        "ishead=false,symbol=6": { "model": "goeturgy:symbol7" }
+    }
+}

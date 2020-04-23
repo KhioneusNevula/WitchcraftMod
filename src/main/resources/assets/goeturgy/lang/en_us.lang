@@ -1,0 +1,9 @@
+#Items
+item.chalk_dust.name=Chalk Dust
+item.dust_bag.name=Bag of Chalk Dust
+
+#Blocks
+tile.chalk_block.name=Chalk
+
+#Screen
+abacus.value=Number: %s
