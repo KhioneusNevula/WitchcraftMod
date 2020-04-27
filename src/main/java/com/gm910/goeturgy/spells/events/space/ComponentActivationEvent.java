@@ -1,23 +1,24 @@
 package com.gm910.goeturgy.spells.events.space;
 
-import com.gm910.goeturgy.spells.spellspaces.SpellSpace;
+import com.gm910.goeturgy.spells.events.space.SpellSpaceEvent.SpellSpaceRunEvent;
+import com.gm910.goeturgy.spells.spellspaces.SpellSpace.SpellInstance;
 import com.gm910.goeturgy.spells.util.ISpellComponent;
 
 import net.minecraft.tileentity.TileEntity;
 
-public class ComponentActivationEvent<T extends TileEntity> extends SpellSpaceEvent {
+public class ComponentActivationEvent<T extends TileEntity> extends SpellSpaceRunEvent {
 
 	private T asTileEntity;
 	private ISpellComponent component;
 	
-	public ComponentActivationEvent(SpellSpace space, T component) {
+	public ComponentActivationEvent(SpellInstance space, T component) {
 		super(space);
 		this.asTileEntity = component;
 		this.component = (ISpellComponent) component;
 		// TODO Auto-generated constructor stub
 	}
 	
-	public ComponentActivationEvent(SpellSpace space, ISpellComponent component) {
+	public ComponentActivationEvent(SpellInstance space, ISpellComponent component) {
 		super(space);
 		try {
 			this.asTileEntity = (T) component;

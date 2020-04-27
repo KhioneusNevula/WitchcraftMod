@@ -1,17 +1,13 @@
 package com.gm910.goeturgy.spells.bordermakers.spell_dust;
 
-import java.io.Serializable;
-
-import com.gm910.goeturgy.messages.Messages;
+import com.gm910.goeturgy.blocks.BlockSpellDust;
 import com.gm910.goeturgy.spells.spellspaces.ClientSpellSpace;
 import com.gm910.goeturgy.spells.spellspaces.SpellSpace;
 import com.gm910.goeturgy.spells.spellspaces.SpellSpaces;
 import com.gm910.goeturgy.spells.util.ISpellBorder;
 import com.gm910.goeturgy.tileentities.TileEntityBaseTickable;
-import com.gm910.goeturgy.util.GMNBT;
 
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagString;
 import net.minecraft.nbt.NBTUtil;
 import net.minecraft.util.math.BlockPos;
 
@@ -24,10 +20,12 @@ public class TileSpellDust extends TileEntityBaseTickable implements ISpellBorde
 	
 	protected ClientSpellSpace clientSpace = null;
 	
+	
+	
 	@Override
 	public NBTTagCompound getUpdateTag() {
 		NBTTagCompound update = super.getUpdateTag();
-		update.setTag("Spsp", GMNBT.makeList(SpellSpace.runClients, (e) -> new NBTTagString(Messages.serialize((Runnable & Serializable)e))));
+		//update.setTag("Spsp", GMNBT.makeList(SpellSpace.runClients, (e) -> new NBTTagString(Messages.serialize((IRunnableTask & Serializable)e))));
 		if (getSpellSpace() != null) {
 			update.setTag("SpellSpace", this.getSpellSpace().serializeNBT());
 		} else {
@@ -90,6 +88,7 @@ public class TileSpellDust extends TileEntityBaseTickable implements ISpellBorde
 
 	@Override
 	public void setSpellSpace(SpellSpace space) {
+		
 		this.figure = space.getID();
 		this.head = space.getHeadPos();
 		System.out.println("Set spell space to " + space.getID());
@@ -112,10 +111,48 @@ public class TileSpellDust extends TileEntityBaseTickable implements ISpellBorde
 		return isSolid;
 	}
 	
+	public boolean isBlockRedstonePowered() {
+		//boolean turnOff = true;
+		if (!world.isRemote) {
+			if (this.getSpellSpace() != null) {
+				if (this.getSpellSpace().isRunning() && this.isHeadPiece()) {
+					//world.setBlockState(pos, world.getBlockState(pos).withProperty(BlockSpellDust.IS_ON, true));
+					//world.setTileEntity(pos, this);
+					//turnOff = false;
+					return true;
+				}
+			}
+			
+			//if (turnOff) {
+				//world.setBlockState(pos, world.getBlockState(pos).withProperty(BlockSpellDust.IS_ON, false));
+				//world.setTileEntity(pos, this);
+				//return false;
+			//}
+			
+			
+		}
+		return false;
+	}
+	
 	@Override
 	public void update() {
+		if (!world.isRemote) {
+			if (this instanceof TileSpellDustHead) {
+				if (this.getSpellSpace() != null && !this.getSpellSpace().isRunning() && world.isBlockPowered(pos)) {
+					System.out.println("Border activation");
+					this.getSpellSpace().start();
+				}
+			}
+		}
+		
 		
 		super.update();
+	}
+
+	@Override
+	public boolean isHeadPiece() {
+		// TODO Auto-generated method stub
+		return false;
 	}
 	
 }

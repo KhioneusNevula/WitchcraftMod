@@ -6,7 +6,7 @@ public class TileEntityBaseTickable extends TileEntityBase implements ITickable 
 
 	@Override
 	public void update() {
-		//sync();
+		sync();
 	}
 	
 }

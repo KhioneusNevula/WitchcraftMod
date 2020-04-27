@@ -5,16 +5,18 @@ import java.util.List;
 
 import com.gm910.goeturgy.spells.ioflow.BlockStack;
 import com.gm910.goeturgy.spells.ioflow.MagicIO;
+import com.gm910.goeturgy.spells.spellspaces.SpellSpace.SpellInstance;
+import com.gm910.goeturgy.spells.spellspaces.SpellSpaces;
 import com.gm910.goeturgy.spells.util.ISpellComponent;
 import com.gm910.goeturgy.tileentities.TileEntityBaseTickable;
 import com.gm910.goeturgy.util.NonNullMap;
 import com.gm910.goeturgy.util.ServerPos;
 import com.google.common.collect.Lists;
 
+import net.minecraft.block.material.Material;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumFacing;
-import net.minecraft.util.NonNullList;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.common.DimensionManager;
@@ -48,7 +50,7 @@ public class PhilosophicCrystal extends TileEntityBaseTickable implements ISpell
 
 
 	@Override
-	public NonNullMap<EnumFacing, NBTTagCompound> activate(NonNullMap<EnumFacing, NBTTagCompound> inps) {
+	public NonNullMap<EnumFacing, NBTTagCompound> activate(SpellInstance sp, ServerPos modPos, NonNullMap<EnumFacing, NBTTagCompound> inps) {
 		NonNullMap<EnumFacing, NBTTagCompound> out = new NonNullMap<>(NBTTagCompound::new);
 		List<ServerPos> ls = new ArrayList<>();
 		BlockStack block = null;
@@ -64,8 +66,8 @@ public class PhilosophicCrystal extends TileEntityBaseTickable implements ISpell
 			}
 		}
 		if (ls.isEmpty()) {
-			if (!this.getModifiedPos().equals(this.getServerPos())) {
-				ls.add(this.getModifiedPos());
+			if (!modPos.equals(this.getServerPos())) {
+				ls.add(modPos);
 			} else {
 				ls.add(this.getServerPos().sUp());
 			}
@@ -78,8 +80,12 @@ public class PhilosophicCrystal extends TileEntityBaseTickable implements ISpell
 		List<ItemStack> itemRet = new ArrayList<>();
 		for (ServerPos spos : ls) {
 			BlockPos pos = spos.getPos();
+			if (SpellSpaces.get().getByPosition(spos) != null) {
+				System.out.println("Cannot use crystal inside a spellspace");
+				continue;
+			}
 			World world = DimensionManager.getWorld(spos.d);
-			if (world != null && world.getBlockState(pos).getBlockHardness(world, pos) < 5) {
+			if (world != null && world.getBlockState(pos).getBlockHardness(world, pos) < 5) {// && world.getBlockState(pos).getMaterial() != Material.AIR) {
 				System.out.println("Transformation at " + pos);
 				BlockStack prevStack = new BlockStack(spos);
 				List<ItemStack> drops = world.getBlockState(pos).getBlock().getDrops(world, pos, world.getBlockState(pos), 1);
@@ -118,7 +124,7 @@ public class PhilosophicCrystal extends TileEntityBaseTickable implements ISpell
 	}
 
 	@Override
-	public int getRequiredPowerFromNBT(NonNullMap<EnumFacing, NBTTagCompound> tagsForSide) {
+	public int getRequiredPowerFromNBT(NonNullMap<EnumFacing, NBTTagCompound> tagsForSide, ServerPos modifiedPos) {
 		List<ServerPos> ls = new ArrayList<>();
 		int val = 10;
 		BlockStack block = null;
@@ -134,7 +140,7 @@ public class PhilosophicCrystal extends TileEntityBaseTickable implements ISpell
 			}
 		}
 		if (block != null) {
-			val += 4*block.getBlock().getBlockHardness(getModifiedWorld(), getModifiedPos());
+			val += 4*block.getBlock().getBlockHardness(modifiedPos.getWorld(), modifiedPos);
 		}
 		val += 2*ls.size();
 		return val;

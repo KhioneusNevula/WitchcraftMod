@@ -16,7 +16,7 @@ public class BlockMagicalBarrier extends BlockBase {
 	
 	public BlockMagicalBarrier(String name)
     {
-        super(name, Material.BARRIER, true, null);
+        super(name, Material.BARRIER, true, null, null);
         this.setBlockUnbreakable();
         this.setResistance(6000001.0F);
         this.disableStats();

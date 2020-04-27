@@ -4,18 +4,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.gm910.goeturgy.spells.spellspaces.SpellSpaces;
-import com.gm910.goeturgy.util.DrawEffects;
 import com.gm910.goeturgy.util.IObjectMouseoverGui;
+import com.gm910.goeturgy.util.ServerPos;
 
-import akka.japi.Pair;
-import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.texture.TextureManager;
-import net.minecraft.entity.effect.EntityLightningBolt;
-import net.minecraft.init.Blocks;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumParticleTypes;
@@ -66,8 +62,12 @@ public class TileSpellDustHead extends TileSpellDust implements IObjectMouseover
 			} else {
 				//System.out.println("Hasspellspace");
 				if (getSpellSpace() == null) {
-					
+					if (SpellSpaces.get().getByPosition(new ServerPos(pos, world)) != null) {
+						this.figure = SpellSpaces.get().getByPosition(getServerPos()).getID();
+					}
 					System.out.println("Spellspace has not been created but it clearly exists...?");
+					world.createExplosion(null, pos.getX()+0.5, pos.getY(), pos.getZ()+0.5, 0.2f, false);
+					//this.setSpaceID(-1);
 					return;
 				}
 				List<BlockPos> ol = getSpellSpace().getInnerSpace();
@@ -163,10 +163,17 @@ public class TileSpellDustHead extends TileSpellDust implements IObjectMouseover
 			//System.out.println("ugghghg");
 			return;
 		}
-		BlockPos pos = clientSpace.magickingPos;
-		DrawEffects.drawBlock(event.getPartialTicks(), Blocks.FIRE.getDefaultState(), pos.up(), 1);
+		//if (this.clientSpace.magickingPos == null) return;
+		//BlockPos pos = clientSpace.magickingPos;
+		//DrawEffects.drawBlock(event.getPartialTicks(), Blocks.FIRE.getDefaultState(), pos.up(), 1);
 		
 		
+	}
+	
+	@Override
+	public boolean isHeadPiece() {
+		// TODO Auto-generated method stub
+		return true;
 	}
 	
 }

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.gm910.goeturgy.spells.ioflow.MagicIO;
+import com.gm910.goeturgy.spells.spellspaces.SpellSpace.SpellInstance;
 import com.gm910.goeturgy.spells.util.ISpellComponent;
 import com.gm910.goeturgy.tileentities.TileEntityBaseTickable;
 import com.gm910.goeturgy.util.NonNullMap;
@@ -49,7 +50,7 @@ public class WindChime extends TileEntityBaseTickable implements ISpellComponent
 	}
 	
 	@Override
-	public NonNullMap<EnumFacing, NBTTagCompound> activate(NonNullMap<EnumFacing, NBTTagCompound> inputs) {
+	public NonNullMap<EnumFacing, NBTTagCompound> activate(SpellInstance sp, ServerPos modifiedPos, NonNullMap<EnumFacing, NBTTagCompound> inputs) {
 		NonNullMap<EnumFacing, NBTTagCompound> outputs = new NonNullMap<>(NBTTagCompound::new);
 		
 		int radius = getRadiusFrom(inputs);
@@ -58,9 +59,9 @@ public class WindChime extends TileEntityBaseTickable implements ISpellComponent
 		List<EntityLivingBase> entities = new ArrayList<>();
 		{
 			final int temp = radius;
-			entities = this.getModifiedWorld().getEntities(EntityLivingBase.class, (e) -> {
+			entities = modifiedPos.getWorld().getEntities(EntityLivingBase.class, (e) -> {
 				
-				return e.getDistanceSq(this.getModifiedPos()) <= temp * temp;
+				return e.getDistanceSq(modifiedPos) <= temp * temp;
 			});
 		}
 		List<ServerPos> poses = new ArrayList<>();
@@ -93,7 +94,7 @@ public class WindChime extends TileEntityBaseTickable implements ISpellComponent
 	}
 
 	@Override
-	public int getRequiredPowerFromNBT(NonNullMap<EnumFacing, NBTTagCompound> tagsForSide) {
+	public int getRequiredPowerFromNBT(NonNullMap<EnumFacing, NBTTagCompound> tagsForSide, ServerPos modifiedPos) {
 		// TODO Auto-generated method stub
 		return 2 * getRadiusFrom(tagsForSide);
 	}

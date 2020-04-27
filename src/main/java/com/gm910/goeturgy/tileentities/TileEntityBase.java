@@ -1,13 +1,13 @@
 package com.gm910.goeturgy.tileentities;
 
 import com.gm910.goeturgy.spells.ioflow.MagicIO;
+import com.gm910.goeturgy.spells.spellspaces.SpellSpace;
+import com.gm910.goeturgy.spells.spellspaces.SpellSpaces;
 import com.gm910.goeturgy.util.NonNullMap;
-import com.gm910.goeturgy.util.ServerPos;
 
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
-import net.minecraft.util.math.Vec3i;
 import net.minecraftforge.common.util.Constants.NBT;
 
 /**
@@ -17,18 +17,15 @@ import net.minecraftforge.common.util.Constants.NBT;
  */
 public abstract class TileEntityBase extends TileEntity {
 	
-	protected Vec3i offset = new Vec3i(0,0,0);
-	protected ServerPos delegatePos = null;
 
 	protected NonNullMap<EnumFacing, NBTTagCompound> inputs = new NonNullMap<EnumFacing, NBTTagCompound>(NBTTagCompound::new);
 	protected NonNullMap<EnumFacing, NBTTagCompound> outputs = new NonNullMap<EnumFacing, NBTTagCompound>(NBTTagCompound::new);
-	
+	protected long figure;
 	
 	@Override
 	public void onLoad() {
 		// TODO Auto-generated method stub
 		super.onLoad();
-		delegatePos = new ServerPos(pos, world);
 	}
 	
 	public void sync() {
@@ -58,6 +55,7 @@ public abstract class TileEntityBase extends TileEntity {
 		NBTTagCompound cmp = super.writeToNBT(compound);
 		cmp.setTag("Inp", MagicIO.nonNullMapToNBT(inputs));
 		cmp.setTag("Outp", MagicIO.nonNullMapToNBT(outputs));
+		cmp.setLong("Figure", this.figure);
 		return cmp;
 	}
 	
@@ -65,28 +63,21 @@ public abstract class TileEntityBase extends TileEntity {
 	public void readFromNBT(NBTTagCompound compound) {
 		inputs = MagicIO.nonNullMapFromNBT(compound.getTagList("Inp", NBT.TAG_COMPOUND));
 		outputs = MagicIO.nonNullMapFromNBT(compound.getTagList("Outp", NBT.TAG_COMPOUND));
+		this.figure = compound.getLong("Figure");
 		super.readFromNBT(compound);
 	}
 	
-	public Vec3i getOffset() {
-		return offset;
+	public void setSpaceID(long id) {
+		this.figure = id;
+	}
+	public SpellSpace getSpellSpace() {
+		return SpellSpaces.get().getById(figure);
+	}
+	public long getSpaceID() {
+		return figure;
 	}
 	
-	/**
-	 * if magic is cast to a diff location
-	 * @return
-	 */
-	public ServerPos getDelegatedPos() {
-		return this.delegatePos;
-	}
 	
-	public void offset(Vec3i offset) {
-		this.offset = offset;
-	}
-	
-	public void setDelegatedPos(ServerPos delegatePos) {
-		this.delegatePos = delegatePos;
-	}
 	
 	public void resetInputs() {
 		this.inputs.clear();

@@ -1,18 +1,15 @@
 package com.gm910.goeturgy.spells.util;
 
 import java.util.List;
-import java.util.function.BiFunction;
 
 import com.gm910.goeturgy.spells.spellspaces.SpellSpace;
-import com.gm910.goeturgy.spells.spellspaces.SpellSpaces;
+import com.gm910.goeturgy.spells.spellspaces.SpellSpace.SpellInstance;
 import com.gm910.goeturgy.util.NonNullMap;
 import com.gm910.goeturgy.util.ServerPos;
 
-import net.minecraft.nbt.NBTBase;
+import net.minecraft.entity.Entity;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumFacing;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
 
 public interface ISpellComponent extends ISpellObject {
 
@@ -47,24 +44,32 @@ public interface ISpellComponent extends ISpellObject {
 	 * @param input
 	 * @return
 	 */
-	public NonNullMap<EnumFacing, NBTTagCompound> activate(NonNullMap<EnumFacing, NBTTagCompound> inputs);
+	public NonNullMap<EnumFacing, NBTTagCompound> activate(SpellInstance runner, ServerPos modifiedPos, NonNullMap<EnumFacing, NBTTagCompound> inputs);
 	
 	/**
 	 * Activate this and return its output, inputs are assumed to have been statically inserted (use for starter components)
 	 * ##DO NOT OVERRIDE
 	 * if input is incorrect return null
 	 */
-	public default NonNullMap<EnumFacing, NBTTagCompound> activate() {
-		return activate(this.getInputs());
+	public default NonNullMap<EnumFacing, NBTTagCompound> activate(SpellInstance runner, ServerPos modifiedPos) {
+		return activate(runner, modifiedPos, this.getInputs());
+	}
+	
+	public default NonNullMap<EnumFacing, NBTTagCompound> activate(SpellInstance runner, Entity modifiedEntity, NonNullMap<EnumFacing, NBTTagCompound> inputs) {
+		return activate(runner, new ServerPos(modifiedEntity), inputs);
 	}
 	
 	/**
 	 * Returns the output if this component is static
 	 * @return
 	 */
-	public default NonNullMap<EnumFacing, NBTTagCompound> getStaticOutput() {
+	public default NonNullMap<EnumFacing, NBTTagCompound> getStaticOutput(ServerPos modifiedPos) {
 		
 		return new NonNullMap<EnumFacing, NBTTagCompound>(NBTTagCompound::new);
+	}
+	
+	public default NonNullMap<EnumFacing, NBTTagCompound> getStaticOutput(Entity modEntity, ServerPos modifiedPos) {
+		return getStaticOutput(modifiedPos);
 	}
 	
 	/**
@@ -83,9 +88,15 @@ public interface ISpellComponent extends ISpellObject {
 	/**
 	 * Returns assumed required power based on the given compounds from given sides
 	 * @param tagsForSide
+	 * @param modifiedPos TODO
 	 * @return
 	 */
-	public int getRequiredPowerFromNBT(NonNullMap<EnumFacing, NBTTagCompound> tagsForSide);
+	public int getRequiredPowerFromNBT(NonNullMap<EnumFacing, NBTTagCompound> tagsForSide, ServerPos modifiedPos);
+	
+	public default int getRequiredPowerFromNBT(NonNullMap<EnumFacing, NBTTagCompound> tagsForSide, Entity modifiedEntity) {
+		return this.getRequiredPowerFromNBT(tagsForSide, new ServerPos(modifiedEntity));
+	}
+	
 	
 	/**
 	 * Returns assumed required power based on the inputs currently in the component
@@ -110,15 +121,6 @@ public interface ISpellComponent extends ISpellObject {
 	
 	public default void setSpellSpace(SpellSpace space) {
 		
-	}
-	public default void setSpaceID(long id) {
-		
-	}
-	public default SpellSpace getSpellSpace() {
-		return SpellSpaces.get().getByPosition(this.getServerPos());
-	}
-	public default long getSpaceID() {
-		return getSpellSpace() != null ? getSpellSpace().getID() : null;
 	}
 	
 	public default String getString() {

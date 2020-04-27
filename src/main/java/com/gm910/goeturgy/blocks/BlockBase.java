@@ -5,6 +5,8 @@ import java.util.Map;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
+import javax.annotation.Nullable;
+
 import com.gm910.goeturgy.Goeturgy;
 import com.gm910.goeturgy.init.BlockInit;
 import com.gm910.goeturgy.init.ItemInit;
@@ -29,14 +31,14 @@ public class BlockBase extends Block implements IHasModel {
 	protected Map<String, Predicate<? super IBlockState>> tilePreds = new HashMap<>();
 	
 
-	public BlockBase(String name, Material materialIn, boolean makeItem, CreativeTabs tab) {
+	public BlockBase(String name, Material materialIn, boolean makeItem, @Nullable ItemBlock itemBlock, CreativeTabs tab) {
 		super(materialIn);
 		setUnlocalizedName(name);
 		setRegistryName(new ResourceLocation(Goeturgy.MODID, name));
 		setCreativeTab(tab);
 		
 		BlockInit.BLOCKS.add(this);
-		if (makeItem) ItemInit.ITEMS.add((new ItemBlock(this)).setRegistryName(this.getRegistryName()));
+		if (makeItem) ItemInit.ITEMS.add(itemBlock == null ? (new ItemBlock(this)).setRegistryName(this.getRegistryName()) : itemBlock);
 		
 	}
 
@@ -71,7 +73,7 @@ public class BlockBase extends Block implements IHasModel {
 	}
 	
 	public BlockBase(String name, Material material, boolean makeItem) {
-		this(name, material, makeItem, CreativeTabs.BUILDING_BLOCKS);
+		this(name, material, makeItem, null, CreativeTabs.BUILDING_BLOCKS);
 	}
 	
 	public BlockBase(String name, Material material) {
@@ -99,7 +101,7 @@ public class BlockBase extends Block implements IHasModel {
 				return tileSups.get(sup).get();
 			}
 		}
-		System.out.println("Tile entity confusion??");
+		//System.out.println("Tile entity confusion??");
 		return super.createTileEntity(world, state);
 	}
 

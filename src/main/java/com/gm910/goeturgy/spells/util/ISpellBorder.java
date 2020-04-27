@@ -4,4 +4,5 @@ public interface ISpellBorder extends ISpellObject {
 
 	public void setSolid(boolean solid);
 	public boolean isSolid();
+	public boolean isHeadPiece();
 }

@@ -14,7 +14,7 @@ import net.minecraft.world.World;
 public class BlockAbacus extends BlockBase {
 
 	public BlockAbacus(String name) {
-		super(name, Material.WOOD, true, CreativeTabs.REDSTONE);
+		super(name, Material.WOOD, true, null, CreativeTabs.REDSTONE);
 		this.setTileEntity("abacus", Abacus.class);
 	}
 

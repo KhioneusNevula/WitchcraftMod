@@ -3,9 +3,11 @@ package com.gm910.goeturgy.spells.components;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.gm910.goeturgy.spells.spellspaces.SpellSpace.SpellInstance;
 import com.gm910.goeturgy.spells.util.ISpellComponent;
 import com.gm910.goeturgy.tileentities.TileEntityBaseTickable;
 import com.gm910.goeturgy.util.NonNullMap;
+import com.gm910.goeturgy.util.ServerPos;
 
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumFacing;
@@ -39,7 +41,7 @@ public class InitiatorPearlBlock extends TileEntityBaseTickable implements ISpel
 
 
 	@Override
-	public NonNullMap<EnumFacing, NBTTagCompound> activate(NonNullMap<EnumFacing, NBTTagCompound> map) {
+	public NonNullMap<EnumFacing, NBTTagCompound> activate(SpellInstance sp, ServerPos modifiedPos, NonNullMap<EnumFacing, NBTTagCompound> map) {
 		System.out.println("Pearl block activated");
 		return new NonNullMap<>(NBTTagCompound::new);
 	}
@@ -57,7 +59,7 @@ public class InitiatorPearlBlock extends TileEntityBaseTickable implements ISpel
 	}
 
 	@Override
-	public int getRequiredPowerFromNBT(NonNullMap<EnumFacing, NBTTagCompound> tagsForSide) {
+	public int getRequiredPowerFromNBT(NonNullMap<EnumFacing, NBTTagCompound> tagsForSide, ServerPos modifiedPos) {
 		// TODO Auto-generated method stub
 		return 0;
 	}

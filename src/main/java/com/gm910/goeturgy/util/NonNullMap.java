@@ -49,6 +49,11 @@ public class NonNullMap<T, K> extends HashMap<T, K>{
 		return new NonNullMap<T, K> (() -> GMReflection.construct(sup, args));
 	}
 	
+	public NonNullMap(NonNullMap<T, K> other) {
+		super(other);
+		this.supplier = other.supplier;
+	}
+	
 	public NonNullMap(K value) {
 		this(() -> value);
 	}

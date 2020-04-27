@@ -216,7 +216,8 @@ public class ServerPos extends BlockPos {
 	}
 	
 	public static ServerPos fromNBT(NBTTagCompound comp) {
-		return (ServerPos) bpFromNBT(comp);
+		return new ServerPos(new ServerPos(comp.getInteger("X"), 
+				comp.getInteger("Y"), comp.getInteger("Z"), comp.getInteger("D")), comp.getString("Name"));
 	}
 
 	public static NBTTagCompound toNBT(NBTTagCompound comp, BlockPos pos) {

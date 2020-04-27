@@ -31,7 +31,6 @@ public class ClientSpellSpace extends SpellSpace {
 		this.edges = GMNBT.createList(nbt.getTagList("Edges", NBT.TAG_COMPOUND), (b) ->  NBTUtil.getPosFromTag((NBTTagCompound)b) );
 		this.id = nbt.getLong("Id");
 		this.headPos = NBTUtil.getPosFromTag(nbt.getCompoundTag("Head"));
-		this.ticks = nbt.getInteger("Ticks");
 		this.height = nbt.getInteger("Height");
 		
 		(nbt.getTagList("SigPoints", NBT.TAG_COMPOUND)).forEach((b) -> {
@@ -39,15 +38,10 @@ public class ClientSpellSpace extends SpellSpace {
 			sigPoints.put(NBTUtil.getPosFromTag(cmp.getCompoundTag("Pos")), cmp.getCompoundTag("State"));
 		});
 	}
-	
-	@Override
-	public void activateAndDisseminateOutput(BlockPos pos, boolean starter, NonNullMap<EnumFacing, NBTTagCompound> inputs, List<BlockPos> pp) {}
+
 	@Override
 	public void decrementPower(int amount) {}
-	@Override
-	public void disseminateStaticOutput(BlockPos pos, boolean vertical) {}
-	@Override
-	public void end(boolean s, BlockPos p) {}
+
 	
 	@Override
 	public int extractPower(int power) {return 0;}

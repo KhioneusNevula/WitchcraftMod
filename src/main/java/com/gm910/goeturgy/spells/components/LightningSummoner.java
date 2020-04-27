@@ -2,25 +2,20 @@ package com.gm910.goeturgy.spells.components;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 import com.gm910.goeturgy.spells.ioflow.MagicIO;
+import com.gm910.goeturgy.spells.spellspaces.SpellSpace.SpellInstance;
 import com.gm910.goeturgy.spells.util.ISpellComponent;
 import com.gm910.goeturgy.tileentities.TileEntityBaseTickable;
-import com.gm910.goeturgy.util.GMNBT;
 import com.gm910.goeturgy.util.NonNullMap;
 import com.gm910.goeturgy.util.ServerPos;
 
 import net.minecraft.entity.effect.EntityLightningBolt;
-import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.common.DimensionManager;
-import net.minecraftforge.common.util.Constants.NBT;
 
 public class LightningSummoner extends TileEntityBaseTickable implements ISpellComponent {
 
@@ -51,7 +46,7 @@ public class LightningSummoner extends TileEntityBaseTickable implements ISpellC
 
 
 	@Override
-	public NonNullMap<EnumFacing, NBTTagCompound> activate(NonNullMap<EnumFacing, NBTTagCompound> inps) {
+	public NonNullMap<EnumFacing, NBTTagCompound> activate(SpellInstance sp, ServerPos modifiedPos, NonNullMap<EnumFacing, NBTTagCompound> inps) {
 		List<ServerPos> ls = new ArrayList<>();
 		for (EnumFacing f : EnumFacing.VALUES) {
 			if (MagicIO.getPosList(inps.get(f)) != null) {
@@ -62,7 +57,7 @@ public class LightningSummoner extends TileEntityBaseTickable implements ISpellC
 			}
 		}
 		if (ls.isEmpty()) {
-			ls.add(this.getModifiedPos());
+			ls.add(modifiedPos);
 		}
 		for (ServerPos spos : ls) {
 			BlockPos pos = spos.getPos();
@@ -77,8 +72,7 @@ public class LightningSummoner extends TileEntityBaseTickable implements ISpellC
 
 	@Override
 	public NonNullMap<EnumFacing, List<String>> getPossibleReturns(NonNullMap<EnumFacing, List<String>> input) {
-		// TODO Auto-generated method stub
-		return new NonNullMap<EnumFacing, List<String>>(ArrayList<String>::new);
+		return new NonNullMap<>(ArrayList<String>::new);
 	}
 
 	@Override
@@ -88,7 +82,7 @@ public class LightningSummoner extends TileEntityBaseTickable implements ISpellC
 	}
 
 	@Override
-	public int getRequiredPowerFromNBT(NonNullMap<EnumFacing, NBTTagCompound> tagsForSide) {
+	public int getRequiredPowerFromNBT(NonNullMap<EnumFacing, NBTTagCompound> tagsForSide, ServerPos modifiedPos) {
 		List<ServerPos> ls = new ArrayList<>();
 		for (EnumFacing f : EnumFacing.VALUES) {
 			List<ServerPos> lse =MagicIO.getPosList(tagsForSide.get(f));

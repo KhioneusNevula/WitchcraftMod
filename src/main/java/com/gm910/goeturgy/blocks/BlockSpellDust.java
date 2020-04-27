@@ -24,6 +24,7 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.util.NonNullList;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 
@@ -33,15 +34,28 @@ public class BlockSpellDust extends BlockBase implements ITileEntityProvider {
 	public static final int SYMBOL_MAX = 7;
 	public static final PropertyInteger SYMBOL = PropertyInteger.create("symbol", 0, SYMBOL_MAX-1);
 	
+	
 	public static final int HEAD_META = 1;
 	
 	public BlockSpellDust(String name) {
-		super(name, Material.CIRCUITS, false);
+		super(name, Material.GROUND, false);
 		this.setDefaultState(this.blockState.getBaseState().withProperty(IS_HEAD, false));
 		this.addTile(TileSpellDust.class, "spell_dust");
 		this.addTile(TileSpellDustHead.class, "spell_dust_head");
 	}
 
+	@Override
+	public boolean canProvidePower(IBlockState state) {
+		
+		
+		return true;
+	}
+	
+	@Override
+	public int getWeakPower(IBlockState blockState, IBlockAccess blockAccess, BlockPos pos, EnumFacing side) {
+		// TODO Auto-generated method stub
+		return ((TileSpellDust)blockAccess.getTileEntity(pos)).isBlockRedstonePowered() ? 15 : 0;
+	}
 	
 	@Override
 	public boolean hasTileEntity(IBlockState state) {
@@ -63,8 +77,21 @@ public class BlockSpellDust extends BlockBase implements ITileEntityProvider {
 	
 	@Override
 	public IBlockState getActualState(IBlockState state, IBlockAccess worldIn, BlockPos pos) {
-		// TODO Auto-generated method stub
-		return super.getActualState(state, worldIn, pos).withProperty(SYMBOL, (int)((new Random()).nextInt(SYMBOL_MAX)));
+		ChunkPos chpos = new ChunkPos(pos);
+		long d1 = (new Random(pos.getX() * pos.getY() * pos.getZ())).nextLong();
+		long d2 = (new Random(chpos.x * chpos.z)).nextLong();
+		long d3 = (new Random(chpos.x + chpos.z)).nextLong();
+		long d4 = (new Random(pos.getX() + pos.getY() + pos.getZ())).nextLong();
+		//worldIn.getCombinedLight(pos, (new Random(d1*d2*d3*d4)).nextInt(14));
+		long d5 = 1;
+		if (worldIn instanceof World) {
+			World world = (World)worldIn;
+			d5 = world.getWorldTime() / 100 + 1;
+		} 
+		
+		int m = (new Random(d1*d2*d3*d4*d5)).nextInt(SYMBOL_MAX);
+		
+		return super.getActualState(state, worldIn, pos).withProperty(SYMBOL, m);
 	}
 	
 	@Override

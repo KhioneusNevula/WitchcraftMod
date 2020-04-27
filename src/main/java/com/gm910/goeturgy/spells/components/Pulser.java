@@ -4,22 +4,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.gm910.goeturgy.spells.ioflow.MagicIO;
-import com.gm910.goeturgy.spells.spellspaces.SpellSpace;
+import com.gm910.goeturgy.spells.spellspaces.SpellSpace.SpellInstance;
 import com.gm910.goeturgy.spells.util.ISpellChainListener;
 import com.gm910.goeturgy.spells.util.ISpellComponent;
 import com.gm910.goeturgy.tileentities.TileEntityBaseTickable;
 import com.gm910.goeturgy.util.GMNBT;
 import com.gm910.goeturgy.util.NonNullMap;
+import com.gm910.goeturgy.util.ServerPos;
 
 import akka.japi.Pair;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
-import net.minecraft.nbt.NBTUtil;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.common.util.Constants.NBT;
 
-public class HeartCrystal extends TileEntityBaseTickable implements ISpellComponent, ISpellChainListener {
+public class Pulser extends TileEntityBaseTickable implements ISpellComponent, ISpellChainListener {
 
 	private NBTTagList data = null;
 	private int index = -1;
@@ -51,8 +51,8 @@ public class HeartCrystal extends TileEntityBaseTickable implements ISpellCompon
 	
 		for (String s : MagicIO.TAG_TYPES) {
 			for (EnumFacing f : EnumFacing.VALUES) {
-				if (!inputs.get(f).hasKey(s)) continue;
-				NBTTagList ls = inputs.get(f).getTagList(s, MagicIO.LIST_TYPE_FOR_TAG.get(s));
+				if (!inputs.get(f).hasKey(MagicIO.toList(s))) continue;
+				NBTTagList ls = inputs.get(f).getTagList(MagicIO.toList(s), MagicIO.LIST_TYPE_FOR_TAG.get(s));
 				return new Pair<>(s, ls);
 				
 			}
@@ -61,19 +61,22 @@ public class HeartCrystal extends TileEntityBaseTickable implements ISpellCompon
 	}
 	
 	public void end() {
+		System.out.println("Pulser iterations ended");
 		index = -1;
 		data = null;
 		tagType = null;
 	}
 	
 	@Override
-	public NonNullMap<EnumFacing, NBTTagCompound> activate(NonNullMap<EnumFacing, NBTTagCompound> inputs) {
+	public NonNullMap<EnumFacing, NBTTagCompound> activate(SpellInstance sp, ServerPos modifiedPos, NonNullMap<EnumFacing, NBTTagCompound> inputs) {
 		NonNullMap<EnumFacing, NBTTagCompound> outputs = new NonNullMap<>(NBTTagCompound::new);
+		System.out.println("Pulser at index " + index);
 		if (index == -1) {
 			Pair<String, NBTTagList> pa = getListToIterate(inputs);
 			this.tagType = pa.first();
 			this.data = pa.second();
 			if (data == null || tagType == null) {
+				System.out.println("Pulser data: " + data + " ,  pulser tagtype : " + tagType);
 				end();
 				return null;
 			} else if (data.hasNoTags()){
@@ -83,7 +86,7 @@ public class HeartCrystal extends TileEntityBaseTickable implements ISpellCompon
 			
 			makeOutputs(0, outputs);
 			waitingToActivate = true;
-			//this.getSpellSpace().markForActivationNextTick(this.pos, null);
+			sp.markForActivationNextTick(this.pos, null);
 			index = 1;
 		} else {
 			if (this.data == null || this.tagType == null) {
@@ -97,7 +100,7 @@ public class HeartCrystal extends TileEntityBaseTickable implements ISpellCompon
 			}
 			
 			makeOutputs(index, outputs);
-			//this.getSpellSpace().markForActivationNextTick(pos, null);
+			sp.markForActivationNextTick(pos, null);
 			waitingToActivate = true;
 			index++;
 			
@@ -113,6 +116,7 @@ public class HeartCrystal extends TileEntityBaseTickable implements ISpellCompon
 			
 			return cmp;
 		}, EnumFacing.VALUES);
+		System.out.println("Pulser contains at " + index + ": " + data.get(index));
 		return outputs;
 	}
 
@@ -136,7 +140,7 @@ public class HeartCrystal extends TileEntityBaseTickable implements ISpellCompon
 	}
 
 	@Override
-	public int getRequiredPowerFromNBT(NonNullMap<EnumFacing, NBTTagCompound> tagsForSide) {
+	public int getRequiredPowerFromNBT(NonNullMap<EnumFacing, NBTTagCompound> tagsForSide, ServerPos modifiedPos) {
 		// TODO Auto-generated method stub
 		return 2 * (this.getListToIterate(tagsForSide).second() != null ? this.getListToIterate(tagsForSide).second().tagCount() : 0);
 	}
@@ -178,26 +182,30 @@ public class HeartCrystal extends TileEntityBaseTickable implements ISpellCompon
 	}
 
 	@Override
-	public void activated(SpellSpace space, BlockPos pos) {
+	public void activated(SpellInstance space, BlockPos pos) {
 		
 	}
 
 	@Override
-	public void finished(SpellSpace space, BlockPos pos, boolean success) {
+	public void finished(SpellInstance space, BlockPos pos, boolean success) {
+		System.out.println("Pulser listener finished at " + pos + "? " + success);
 		if (success && waitingToActivate) {
+			System.out.println("pulser Listener finished and marked spellspace");
 			space.markForActivationNextTick(pos, null);
 			this.waitingToActivate = false;
+		} else if (!success) {
+			this.end();
 		}
 	}
 
 	@Override
-	public void addToChain(SpellSpace space, BlockPos pos) {
+	public void addToChain(SpellInstance space, BlockPos pos) {
 		this.listening.add(pos);
 	}
 
 	@Override
-	public boolean isPartOfChain(SpellSpace space, BlockPos pos) {
-		// TODO Auto-generated method stub
+	public boolean isPartOfChain(SpellInstance space, BlockPos pos) {
+		
 		return listening.contains(pos);
 	}
 	

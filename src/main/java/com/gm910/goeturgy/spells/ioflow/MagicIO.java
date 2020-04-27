@@ -138,7 +138,7 @@ public abstract class MagicIO {
 	}
 	
 	public static ItemStack getItemStack(NBTTagCompound cmp) {
-		return new ItemStack(get(ITEM, cmp, cmp::getCompoundTag)); 
+		return get(ITEM, cmp, cmp::getCompoundTag) == null ? ItemStack.EMPTY : new ItemStack(get(ITEM, cmp, cmp::getCompoundTag)); 
 	}
 	
 	public static BlockStack getBlockStack(NBTTagCompound cmp) {
@@ -318,6 +318,10 @@ public abstract class MagicIO {
 	
 	
 	public static NBTTagCompound write(String type, Object info, NBTTagCompound cmp) {
+		if (info instanceof NBTBase) {
+			cmp.setTag(type, (NBTBase)info);
+			return cmp;
+		}
 		cmp.setTag(type, WRITERS.get(type).apply(info));
 		
 		return cmp;

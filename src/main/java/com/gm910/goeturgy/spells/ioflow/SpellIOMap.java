@@ -31,6 +31,10 @@ public class SpellIOMap extends NonNullMap<EnumFacing, NBTTagCompound> {
 		// TODO Auto-generated constructor stub
 	}
 	
+	public SpellIOMap() {
+		super(NBTTagCompound::new);
+	}
+	
 	public SpellIOMap(NonNullMap<EnumFacing, NBTTagCompound> map) {
 		super(map.supplier);
 		this.putAll(map);

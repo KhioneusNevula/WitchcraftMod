@@ -4,10 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.gm910.goeturgy.spells.ioflow.MagicIO;
+import com.gm910.goeturgy.spells.spellspaces.SpellSpace.SpellInstance;
 import com.gm910.goeturgy.spells.util.ISpellComponent;
 import com.gm910.goeturgy.tileentities.TileEntityBaseTickable;
 import com.gm910.goeturgy.util.IObjectMouseoverGui;
 import com.gm910.goeturgy.util.NonNullMap;
+import com.gm910.goeturgy.util.ServerPos;
 import com.gm910.goeturgy.util.Translate;
 
 import net.minecraft.block.state.IBlockState;
@@ -26,7 +28,7 @@ public class Abacus extends TileEntityBaseTickable implements ISpellComponent, I
 
 	private int value = 0;
 	
-	public static final int MAX_VALUE = 30;
+	public static final int MAX_VALUE = 50;
 	
 	@Override
 	public void update() {
@@ -77,7 +79,7 @@ public class Abacus extends TileEntityBaseTickable implements ISpellComponent, I
 	}
 	
 	@Override
-	public NonNullMap<EnumFacing, NBTTagCompound> getStaticOutput() {
+	public NonNullMap<EnumFacing, NBTTagCompound> getStaticOutput(ServerPos modifiedPos) {
 		NonNullMap<EnumFacing, NBTTagCompound> so = new NonNullMap<>( () ->  {
 			NBTTagCompound cmp = new NBTTagCompound();
 			MagicIO.writeIntToCompound(value, cmp);
@@ -101,7 +103,7 @@ public class Abacus extends TileEntityBaseTickable implements ISpellComponent, I
 
 
 	@Override
-	public NonNullMap<EnumFacing, NBTTagCompound> activate(NonNullMap<EnumFacing, NBTTagCompound> map) {
+	public NonNullMap<EnumFacing, NBTTagCompound> activate(SpellInstance sp, ServerPos modifiedPos, NonNullMap<EnumFacing, NBTTagCompound> map) {
 		System.out.println("Abacus should not be activated, it is static");
 		return new NonNullMap<>(NBTTagCompound::new);
 	}
@@ -124,7 +126,7 @@ public class Abacus extends TileEntityBaseTickable implements ISpellComponent, I
 	}
 
 	@Override
-	public int getRequiredPowerFromNBT(NonNullMap<EnumFacing, NBTTagCompound> tagsForSide) {
+	public int getRequiredPowerFromNBT(NonNullMap<EnumFacing, NBTTagCompound> tagsForSide, ServerPos modifiedPos) {
 		// TODO Auto-generated method stub
 		return 0;
 	}

@@ -1,6 +1,7 @@
 package com.gm910.goeturgy.spells.events.space;
 
-import com.gm910.goeturgy.spells.spellspaces.SpellSpace;
+import com.gm910.goeturgy.spells.events.space.SpellSpaceEvent.SpellSpaceRunEvent;
+import com.gm910.goeturgy.spells.spellspaces.SpellSpace.SpellInstance;
 
 import net.minecraftforge.fml.common.eventhandler.Cancelable;
 
@@ -9,11 +10,11 @@ import net.minecraftforge.fml.common.eventhandler.Cancelable;
  *
  */
 @Cancelable
-public class SpellSpaceTickingEvent extends SpellSpaceEvent {
+public class SpellSpaceTickingEvent extends SpellSpaceRunEvent {
 
 	private int currentTick;
 	
-	public SpellSpaceTickingEvent(SpellSpace sp, int tick) {
+	public SpellSpaceTickingEvent(SpellInstance sp, int tick) {
 		super(sp);
 		currentTick = tick;
 	}

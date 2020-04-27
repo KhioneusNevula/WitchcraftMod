@@ -36,7 +36,7 @@ public class Messages {
 		   * Please send runnables by casting them to (Runnable & Serializable)
 		   * @param toSend
 		   */
-		  public StringMessage(Serializable toSend) {
+		  public StringMessage(IRunnableTask toSend) {
 		    this.toSend = serialize(toSend);
 		  }
 
@@ -91,7 +91,7 @@ public class Messages {
 		  }
 		}
 	
-	public static String serialize(Serializable obj) {
+	public static String serialize(Object obj) {
 	      ByteArrayOutputStream stream1 = new ByteArrayOutputStream();
 	      try(ObjectOutputStream outputStream = new ObjectOutputStream(stream1)) {
 	         outputStream.writeObject(obj);

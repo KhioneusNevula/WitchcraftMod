@@ -19,36 +19,6 @@ public interface ISpellObject {
 		return new ServerPos(getPos(), getWorld());
 	}
 	
-	/**
-	 * If magic is offsetted
-	 * @return
-	 */
-	public Vec3i getOffset();
-	
-	/**
-	 * Set offset
-	 */
-	public void offset(Vec3i vec);
-	
-	/**
-	 * if magic is cast to a diff location
-	 * @return
-	 */
-	public ServerPos getDelegatedPos();
-	
-	/**
-	 * Change the casting position
-	 * @return
-	 */
-	public void setDelegatedPos(ServerPos pos);
-		
-	public default ServerPos getModifiedPos() {
-		return getDelegatedPos().sAdd(getOffset());
-	}
-	
 	public World getWorld();
 	
-	public default World getModifiedWorld() {
-		return FMLCommonHandler.instance().getMinecraftServerInstance().getWorld(this.getModifiedPos().d);
-	}
 }

@@ -91,6 +91,12 @@ public class SpellSpaces extends WorldSavedData implements Collection<SpellSpace
 			part.setSpaceID(-1);
 		}
 		
+		for (BlockPos pos : sp.sigPoints.keySet()) {
+			ISpellObject part = sp.getWorld().getTileEntity(pos) instanceof ISpellObject ? (ISpellObject)sp.getWorld().getTileEntity(pos) : null;
+			if (part == null) continue;
+			part.setSpaceID(-1);
+		}
+		
 		long id = sp.id;
 		
 		spellSpacesByWorld.get(sp.getDimension()).remove(sp);
@@ -182,13 +188,14 @@ public class SpellSpaces extends WorldSavedData implements Collection<SpellSpace
 
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
+		System.out.println("Deserializing spell space data");
 		this.currentID = nbt.getLong("LastID");
 		this.power = nbt.getInteger("Power");
 		this.spellSpacesByWorld.clear();
 		
 
 		//this.spellSpacesByWorld.get(dim);
-		for (NBTBase base : nbt.getTagList("SpellSpaces", NBT.TAG_COMPOUND)) {
+		for (NBTBase base : nbt.getTagList("SpellSpaceList", NBT.TAG_COMPOUND)) {
 			NBTTagCompound comp = (NBTTagCompound)base;
 			int dim = comp.getInteger("Dimension");
 			List<SpellSpace> list = new ArrayList<>();
@@ -196,7 +203,7 @@ public class SpellSpaces extends WorldSavedData implements Collection<SpellSpace
 				SpellSpace s = new SpellSpace(dim);
 				s.deserializeNBT((NBTTagCompound) base2);
 				//list.add(s);
-				this.addSpellSpace(s);
+				list.add(s);
 			}
 			this.spellSpacesByWorld.put(dim,  list);
 			
@@ -205,6 +212,7 @@ public class SpellSpaces extends WorldSavedData implements Collection<SpellSpace
 
 	@Override
 	public NBTTagCompound writeToNBT(NBTTagCompound compound) {
+		System.out.println("Serializing spell space data");
 		compound.setLong("LastID", currentID);
 		compound.setInteger("Power", this.power);
 		NBTTagList ls = new NBTTagList();
@@ -213,13 +221,13 @@ public class SpellSpaces extends WorldSavedData implements Collection<SpellSpace
 			cmp.setInteger("Dimension", dim);
 			NBTTagList sps = new NBTTagList();
 			
-			for (SpellSpace list : this.spellSpacesByWorld.get(dim)) {
-				sps.appendTag(list.serializeNBT());
+			for (SpellSpace m : this.spellSpacesByWorld.get(dim)) {
+				sps.appendTag(m.serializeNBT());
 			}
 			cmp.setTag("SpellSpaces", sps);
 			ls.appendTag(cmp);
 		}
-		compound.setTag("SpellSpaces", ls);
+		compound.setTag("SpellSpaceList", ls);
 		return compound;
 	}
 

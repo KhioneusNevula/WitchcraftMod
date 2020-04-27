@@ -5,22 +5,18 @@ import java.util.List;
 
 import com.gm910.goeturgy.spells.ioflow.BlockStack;
 import com.gm910.goeturgy.spells.ioflow.MagicIO;
+import com.gm910.goeturgy.spells.spellspaces.SpellSpace.SpellInstance;
 import com.gm910.goeturgy.spells.util.ISpellComponent;
 import com.gm910.goeturgy.tileentities.TileEntityBaseTickable;
-import com.gm910.goeturgy.util.DrawEffects;
 import com.gm910.goeturgy.util.IObjectMouseoverGui;
 import com.gm910.goeturgy.util.NonNullMap;
 import com.gm910.goeturgy.util.ServerPos;
-import com.gm910.goeturgy.util.Translate;
 
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.texture.TextureManager;
-import net.minecraft.entity.item.EntityFallingBlock;
-import net.minecraft.init.Blocks;
-import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
@@ -34,20 +30,23 @@ public class Pedestal extends TileEntityBaseTickable implements ISpellComponent,
 	
 	@Override
 	public void update() {
-		
+		//if (world.isRemote) {
+			//DrawEffects.drawBlock(0.1825f, this.getBlock().getBlock(), pos, 1);
+		//}
 		super.update();
 	}
 	
 	
-	public BlockStack getBlock() {
+	public BlockStack getBlock(ServerPos modifiedPos) {
 		BlockStack stack = null;
 		ServerPos sigPos = null;
-		if (this.getModifiedPos().equals(pos)) {
+		//if (modifiedPos.equals(pos)) {
 			sigPos = getServerPos().sUp();
-		} else {
-			sigPos = getModifiedPos();
-		}
-		for (EnumFacing f : EnumFacing.VALUES) {
+		//} else {
+		//	sigPos = modifiedPos;
+		//}
+		
+		/*for (EnumFacing f : EnumFacing.VALUES) {
 			if (!MagicIO.getItemStack(inputs.get(f)).isEmpty()) {
 				if (MagicIO.getItemStack(inputs.get(f)).getItem() instanceof ItemBlock) {
 					ItemStack itemplacer = MagicIO.getItemStack(inputs.get(f));
@@ -69,7 +68,7 @@ public class Pedestal extends TileEntityBaseTickable implements ISpellComponent,
                     stack = new BlockStack(state, tile);
 				}
 			}
-		}
+		}*/
 		
 		if (stack == null) {
 			stack = new BlockStack(sigPos);
@@ -81,13 +80,13 @@ public class Pedestal extends TileEntityBaseTickable implements ISpellComponent,
 	@Override
 	public boolean accepts(EnumFacing facing, NBTTagCompound comp) {
 		ItemStack stack = MagicIO.getItemStack(comp);
-		if (!stack.isEmpty()) {
+		/*if (!stack.isEmpty()) {
 			if (stack.getItem() != null) {
 				if (stack.getItem() instanceof ItemBlock) {
 					return true;
 				}
 			}
-		} 
+		} */
 		return false;
 	}
 
@@ -97,13 +96,19 @@ public class Pedestal extends TileEntityBaseTickable implements ISpellComponent,
 	}
 	
 	@Override
-	public NonNullMap<EnumFacing, NBTTagCompound> getStaticOutput() {
+	public NonNullMap<EnumFacing, NBTTagCompound> getStaticOutput(ServerPos modifiedPos) {
 		NonNullMap<EnumFacing, NBTTagCompound> so = new NonNullMap<>( () ->  {
 			NBTTagCompound cmp = new NBTTagCompound();
-			MagicIO.writeBlockToCompound(getBlock(), cmp);
+			MagicIO.writeBlockToCompound(getBlock(modifiedPos), cmp);
 			return cmp;
 		});
+
 		so.generateValues(EnumFacing.VALUES);
+		System.out.print("Pedestal output ");
+		so.forEach((n, d) -> {
+			System.out.println(d);
+		});
+		System.out.println();
 		return so;
 	}
 	
@@ -121,9 +126,9 @@ public class Pedestal extends TileEntityBaseTickable implements ISpellComponent,
 
 
 	@Override
-	public NonNullMap<EnumFacing, NBTTagCompound> activate(NonNullMap<EnumFacing, NBTTagCompound> map) {
+	public NonNullMap<EnumFacing, NBTTagCompound> activate(SpellInstance sp, ServerPos modifiedPos, NonNullMap<EnumFacing, NBTTagCompound> map) {
 		this.putInput(map);
-		return this.getStaticOutput();
+		return this.getStaticOutput(modifiedPos);
 	}
 
 	@Override
@@ -144,7 +149,7 @@ public class Pedestal extends TileEntityBaseTickable implements ISpellComponent,
 	}
 
 	@Override
-	public int getRequiredPowerFromNBT(NonNullMap<EnumFacing, NBTTagCompound> tagsForSide) {
+	public int getRequiredPowerFromNBT(NonNullMap<EnumFacing, NBTTagCompound> tagsForSide, ServerPos modifiedPos) {
 		// TODO Auto-generated method stub
 		return 0;
 	}
@@ -159,9 +164,12 @@ public class Pedestal extends TileEntityBaseTickable implements ISpellComponent,
 	@Override
 	public void drawGuiOverlays(Pre event, Minecraft mc, Gui gui, TextureManager tex, ScaledResolution res,
 			EnumFacing sideHit, IBlockState state, Vec3d hitVec, BlockPos position, TileEntity tile, Object object) {
-		EntityFallingBlock e = new EntityFallingBlock(mc.world, position.getX(), position.getY() + 0.5, position.getZ(), this.getBlock().getBlock());
-		e.turn(45, 45);
-		DrawEffects.drawEntity(event.getPartialTicks(), e, 0.3f);
+		
+		//EntityFallingBlock e = new EntityFallingBlock(mc.world, position.getX()+0.5, position.getY() + 1, position.getZ()+0.5, this.getBlock().getBlock());
+		//e.fallTime = 1000;
+		//DrawEffects.drawEntity(event.getPartialTicks(), e, 0.3f);
+		//e.setDead();
+		//world.spawnEntity(e);
 	}
 	
 

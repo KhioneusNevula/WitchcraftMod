@@ -1,5 +1,6 @@
 package com.gm910.goeturgy.proxy;
 
+import com.gm910.goeturgy.init.TileInit;
 import com.gm910.goeturgy.messages.Messages;
 import com.gm910.goeturgy.messages.Messages.ClientMessageHandler;
 import com.gm910.goeturgy.messages.Messages.StringMessage;
@@ -36,6 +37,7 @@ public class ClientProxy implements IProxy {
 	public void preInit() {
 		// TODO Auto-generated method stub
 		Messages.INSTANCE.registerMessage(ClientMessageHandler.class, StringMessage.class, Messages.returnNewID(), Side.CLIENT);
+		TileInit.registerSpecialRenderers();
 	}
 	
 }

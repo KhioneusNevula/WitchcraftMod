@@ -7,3 +7,11 @@ tile.chalk_block.name=Chalk
 
 #Screen
 abacus.value=Number: %s
+
+#Pearl
+pearl.unbound=No binding
+pearl.broken=%1$sBlock at position %2$s is broken
+pearl.withspellspace=Linked to spellspace: %s
+
+#Misc
+null=%sNone

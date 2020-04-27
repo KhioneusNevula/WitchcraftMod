@@ -1,11 +1,12 @@
 package com.gm910.goeturgy.spells.events.space;
 
-import com.gm910.goeturgy.spells.spellspaces.SpellSpace;
+import com.gm910.goeturgy.spells.events.space.SpellSpaceEvent.SpellSpaceRunEvent;
+import com.gm910.goeturgy.spells.spellspaces.SpellSpace.SpellInstance;
 
-public class EndSpellSpaceMagicEvent extends SpellSpaceEvent {
+public class EndSpellSpaceMagicEvent extends SpellSpaceRunEvent {
 
 	private boolean wasSuccessful;
-	public EndSpellSpaceMagicEvent(SpellSpace space, boolean success) {
+	public EndSpellSpaceMagicEvent(SpellInstance space, boolean success) {
 		super(space);
 		wasSuccessful = success;
 	}

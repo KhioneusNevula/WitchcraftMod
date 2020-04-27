@@ -2,6 +2,9 @@ package com.gm910.goeturgy.util;
 
 import org.lwjgl.opengl.GL11;
 
+import com.gm910.goeturgy.Goeturgy;
+
+import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
@@ -10,7 +13,6 @@ import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.BlockRendererDispatcher;
 import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.EntityRenderer;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.RenderItem;
@@ -19,16 +21,18 @@ import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
-import net.minecraftforge.client.model.ModelLoaderRegistry;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.registry.EntityRegistry;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
@@ -143,16 +147,20 @@ public class DrawEffects {
 		GlStateManager.disableLighting();
 		GlStateManager.enableAlpha();
 		GlStateManager.enableBlend();
+		GlStateManager.translate(0.0F, 0.4F, 0.0F);
+		GlStateManager.rotate(45f, 0.0F, 1.0F, 0.0F);
+		GlStateManager.translate(0.0F, -0.2F, 0.0F);
+		GlStateManager.rotate(-30.0F, 1.0F, 0.0F, 0.0F);
 		GlStateManager.scale(scale, scale, scale);
 
 		//GlStateManager.enableBlendProfile(GlStateManager.Profile.TRANSPARENT_MODEL);
 
 		
 		BufferBuilder buf = Tessellator.getInstance().getBuffer();
-		buf.begin(7, DefaultVertexFormats.BLOCK);
+		//buf.begin(7, DefaultVertexFormats.BLOCK);
 		//BlockRendererDispatcher renderer = Minecraft.getMinecraft().getBlockRendererDispatcher();
 		RenderManager ren = Minecraft.getMinecraft().getRenderManager();
-		ren.renderEntity(en, en.posX, en.posY, en.posZ, en.rotationYaw, partialTicks, false);
+		ren.renderEntity(en, 0, 0, 0, 0, partialTicks, false);
 		//renderer.getBlockModelRenderer().renderModel(Minecraft.getMinecraft().player.world, renderer.getModelForState(state), state, pos, buf, false);type name = new type();
 		
 		Tessellator.getInstance().draw();
@@ -199,5 +207,170 @@ public class DrawEffects {
 		RenderHelper.enableGUIStandardItemLighting();
 	}
 	
+
+	public static class RenderBlockShape {
+		public final World world;
+		public final BlockPos pos;
+		public final EntityPlayer player;
+		public int red, green, blue;
+		public String tex;
+		
+		public RenderBlockShape(World world, EntityPlayer player, BlockPos pos, int r, int g, int b, String tex) {
+			this.world = world;
+			this.player = player;
+			this.pos = pos;
+			this.red = r;
+			this.green = g;
+			this.blue = b;
+			this.tex = tex;
+		}
+		
+		public void render(float partialTicks) {
+			render(partialTicks, EnumFacing.VALUES);
+		}
+		
+		public void render(float partialTicks, EnumFacing...sides) {
+			double offsetX = player.prevPosX + (player.posX - player.prevPosX) * (double) partialTicks;
+		    double offsetY = player.prevPosY + (player.posY - player.prevPosY) * (double) partialTicks;
+		    double offsetZ = player.prevPosZ + (player.posZ - player.prevPosZ) * (double) partialTicks;
+		    Minecraft.getMinecraft().getTextureManager().bindTexture(new ResourceLocation(Goeturgy.MODID + ":textures/" + tex));
+		    
+		    IBlockState state = world.getBlockState(pos);
+		    
+		    //GlStateManager.pushMatrix();
+		    //GlStateManager.translate(pos.getX() - offsetX, pos.getY() - offsetY, pos.getZ() - offsetZ);
+		   // GlStateManager.enableTexture2D();;
+
+		   //GlStateManager.enableBlend();
+		    //GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA,
+		     //GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+		    //GlStateManager.color(red, green, blue, 0.7f);
+		    //GlStateManager.disableDepth();
+		    AxisAlignedBB box = (!state.getBlock().isAir(state, world, pos) ? state.getBlock().getBoundingBox(state, world, pos).grow(0, -0.5, 0).offset(0, -0.15, 0) : Block.FULL_BLOCK_AABB.grow(0, -0.5, 0).offset(0, -0.15, 0));
+		    Tessellator tessellator = Tessellator.getInstance();
+		    BufferBuilder buffer = tessellator.getBuffer();
+		    
+		    GlStateManager.pushMatrix();
+	        GlStateManager.translate(pos.getX() - offsetX, pos.getY() - offsetY, pos.getZ() - offsetZ);
+
+	        buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX_LMAP_COLOR);
+
+	        GlStateManager.enableBlend();
+	        GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+
+	        for (EnumFacing f : sides) {
+
+		        this.addSideFullTexture(buffer, f.ordinal(), 1.1f, -0.05f);
+	        }
+
+	        tessellator.draw();
+	        GlStateManager.popMatrix();
+
+		    /*
+		    r.begin(3, DefaultVertexFormats.POSITION); //3 //(int)(Math.random()*3)
+		    
+		    r.pos(box.minX, box.minY, box.minZ).tex(0, 0).endVertex();
+		    r.pos(box.maxX, box.minY, box.minZ).tex(0.1, -0.05).endVertex();
+		    r.pos(box.maxX, box.minY, box.maxZ).tex(0.1, 0).endVertex();
+		    r.pos(box.minX, box.minY, box.maxZ).tex(0, -0.05).endVertex();
+		    r.pos(box.minX, box.minY, box.minZ).endVertex();
+		    tess.draw();
+		    
+		    r.begin(3, DefaultVertexFormats.POSITION); //3 //(int)(Math.random()*3)
+		    r.pos(box.minX, box.maxY, box.minZ).endVertex();
+		    r.pos(box.maxX, box.maxY, box.minZ).endVertex();
+		    r.pos(box.maxX, box.maxY, box.maxZ).endVertex();
+		    r.pos(box.minX, box.maxY, box.maxZ).endVertex();
+		    r.pos(box.minX, box.maxY, box.minZ).endVertex();
+		    tess.draw();
+		    
+		    r.begin(1, DefaultVertexFormats.POSITION); //1 //(int)(Math.random()*8)
+		    r.pos(box.minX, box.minY, box.minZ).endVertex();
+		    r.pos(box.minX, box.maxY, box.minZ).endVertex();
+		    r.pos(box.maxX, box.minY, box.minZ).endVertex();
+		    r.pos(box.maxX, box.maxY, box.minZ).endVertex();
+		    r.pos(box.maxX, box.minY, box.maxZ).endVertex();
+		    r.pos(box.maxX, box.maxY, box.maxZ).endVertex();
+		    r.pos(box.minX, box.minY, box.maxZ).endVertex();
+		    r.pos(box.minX, box.maxY, box.maxZ).endVertex();
+		    tess.draw();
+
+		    
+		    GlStateManager.enableDepth();
+		    GlStateManager.disableBlend();
+		    GlStateManager.enableTexture2D();
+		    GlStateManager.popMatrix();*/
+		    
+	  }
+		
+		private static final Quad[] quads = new Quad[] {
+	            new Quad(new Vt(0, 0, 0), new Vt(1, 0, 0), new Vt(1, 0, 1), new Vt(0, 0, 1)),       // DOWN
+	            new Quad(new Vt(0, 1, 1), new Vt(1, 1, 1), new Vt(1, 1, 0), new Vt(0, 1, 0)),       // UP
+	            new Quad(new Vt(1, 1, 0), new Vt(1, 0, 0), new Vt(0, 0, 0), new Vt(0, 1, 0)),       // NORTH
+	            new Quad(new Vt(1, 0, 1), new Vt(1, 1, 1), new Vt(0, 1, 1), new Vt(0, 0, 1)),       // SOUTH
+	            new Quad(new Vt(0, 0, 1), new Vt(0, 1, 1), new Vt(0, 1, 0), new Vt(0, 0, 0)),       // WEST
+	            new Quad(new Vt(1, 0, 0), new Vt(1, 1, 0), new Vt(1, 1, 1), new Vt(1, 0, 1)),       // EAST
+	    };
+
+	    /*public void addSideFullTexture(BufferBuilder buffer, int side, float mult, float offset, Vec3d offs) {
+	        int brightness = 240;
+	        int b1 = brightness >> 16 & 65535;
+	        int b2 = brightness & 65535;
+	        Quad quad = quads[side];
+	        buffer.pos(offs.x + quad.v1.x * mult + offset, offs.y + quad.v1.y * mult + offset, offs.z + quad.v1.z * mult + offset).tex(0, 0).lightmap(b1, b2).color(255, 255, 255, 128).endVertex();
+	        buffer.pos(offs.x + quad.v2.x * mult + offset, offs.y + quad.v2.y * mult + offset, offs.z + quad.v2.z * mult + offset).tex(0, 1).lightmap(b1, b2).color(255, 255, 255, 128).endVertex();
+	        buffer.pos(offs.x + quad.v3.x * mult + offset, offs.y + quad.v3.y * mult + offset, offs.z + quad.v3.z * mult + offset).tex(1, 1).lightmap(b1, b2).color(255, 255, 255, 128).endVertex();
+	        buffer.pos(offs.x + quad.v4.x * mult + offset, offs.y + quad.v4.y * mult + offset, offs.z + quad.v4.z * mult + offset).tex(1, 0).lightmap(b1, b2).color(255, 255, 255, 128).endVertex();
+	    }*/
+
+	    public void addSideFullTexture(BufferBuilder buffer, int side, float mult, float offset) {
+	        int brightness = 240;
+	        int b1 = brightness >> 16 & 65535;
+	        int b2 = brightness & 65535;
+	        Quad quad = quads[side];
+	        buffer.pos(quad.v1.x * mult + offset, quad.v1.y * mult + offset, quad.v1.z * mult + offset).tex(0, 0).lightmap(b1, b2).color(red/2, green/2, blue/2, 0.7f).endVertex();
+	        buffer.pos(quad.v2.x * mult + offset, quad.v2.y * mult + offset, quad.v2.z * mult + offset).tex(0, 1).lightmap(b1, b2).color(red/2, green/2, blue/2, 0.7f).endVertex();
+	        buffer.pos(quad.v3.x * mult + offset, quad.v3.y * mult + offset, quad.v3.z * mult + offset).tex(1, 1).lightmap(b1, b2).color(red/2, green/2, blue/2, 0.7f).endVertex();
+	        buffer.pos(quad.v4.x * mult + offset, quad.v4.y * mult + offset, quad.v4.z * mult + offset).tex(1, 0).lightmap(b1, b2).color(red/2, green/2, blue/2, 0.7f).endVertex();
+	    }
+
+	    
+	}
+
+	private static class Vt {
+        public final float x;
+        public final float y;
+        public final float z;
+
+        public Vt(float x, float y, float z) {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+        }
+    }
+
+    private static class Quad {
+        public final Vt v1;
+        public final Vt v2;
+        public final Vt v3;
+        public final Vt v4;
+
+        public Quad(Vt v1, Vt v2, Vt v3, Vt v4) {
+            this.v1 = v1;
+            this.v2 = v2;
+            this.v3 = v3;
+            this.v4 = v4;
+        }
+
+        public Quad rotate(EnumFacing direction) {
+            switch (direction) {
+                case NORTH: return new Quad(v4, v1, v2, v3);
+                case EAST: return new Quad(v3, v4, v1, v2);
+                case SOUTH: return new Quad(v2, v3, v4, v1);
+                case WEST: return this;
+                default: return this;
+            }
+        }
+    }
 	
 }
