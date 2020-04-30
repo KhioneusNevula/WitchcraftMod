@@ -31,6 +31,7 @@ public class TileSpellDustHead extends TileSpellDust implements IObjectMouseover
 		if (!world.isRemote) {
 			//System.out.println("Head " + this.hashCode() + " with id " + getSpaceID());
 			if (this.getSpaceID() == -1) {
+				System.out.println("Attempting generation of spellspace");
 				SpellSpaces.get().forEach((d) -> {
 					//System.out.println(d.getHeadPos());
 				});
@@ -57,7 +58,7 @@ public class TileSpellDustHead extends TileSpellDust implements IObjectMouseover
 				if (endPulse != null) {
 					SpellSpaces.get().createSpellSpace(world.provider.getDimension(), HEIGHT, this.pos, endPulse.visited, endPulse.visited);
 				} else {
-					
+					System.out.println("Failed to generate spellspace");
 				}
 			} else {
 				//System.out.println("Hasspellspace");

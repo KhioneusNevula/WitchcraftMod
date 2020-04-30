@@ -68,54 +68,120 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent.PlayerTickEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent.ServerTickEvent;
 
+/**
+ * This class represents a central component to this mod: the spell-space, the space where spells are executed like programs
+ * @author borah
+ *
+ */
 @EventBusSubscriber
 public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 
+	/**
+	 * The dimension this spellspace exists in
+	 */
 	protected int dimension;
 	
+	/**
+	 * ##Probably not used##
+	 */
 	protected String specialWorld;
 	
+	/**
+	 * Edges of the spellspace
+	 */
 	protected List<BlockPos> edges = new ArrayList<>();
 	
+	/**
+	 * Shape of the spellspace (inner area)
+	 */
 	protected List<BlockPos> shape = new ArrayList<>();
 	
-	
+	/**
+	 * Id of the spellspace in Le Grande Interdimensionale Spell-Space Registry
+	 */
 	protected long id = -1;
 	
+	/**
+	 * How tall the spellspace is
+	 */
 	protected int height = 10;
 	
-	public static int AREA_TOLERANCE = 3000;
-	
+	/**
+	 * Universal area tolerance for how long the spellspace's flood fill algorithm searches before it decides that it can't make a spellspace
+	 */
+	public static final int AREA_TOLERANCE = 3000;
 
+	/**
+	 * Indicates that the ending of a spell was forced 
+	 */
+	public static final NonNullMap<EnumFacing, NBTTagCompound> FORCED_END = new SpellIOMap(() -> {NBTTagCompound c = new NBTTagCompound(); c.setBoolean("ForcedEnd", true); return c;});
+	
+	/**
+	 * BlockPos that represents the position acting as 'head' of the spellspace for distinction purposes
+	 */
 	protected BlockPos headPos;
 	
+	/**
+	 * Energy level of spellspace so that we have a check-and-balance for ultra-powerful magic
+	 */
 	protected AetherStorage energyStorage = new AetherStorage(Integer.MAX_VALUE);
 
+	/**
+	 * Significant points that make up border of spellspace, if these are damaged or changed we destroy the spellspace
+	 */
 	protected Map<BlockPos, NBTTagCompound> sigPoints = new HashMap<>();
+	
 	
 	//protected Map<BlockPos, NonNullMap<EnumFacing, NBTTagCompound>> lastTickInputs = new HashMap<>();
 
-	protected List<SpellInstance> runningInstances = new ArrayList<>();
+	/**
+	 * All spells currently being run by the spellspace
+	 */
+	protected List<Spell> runningInstances = new ArrayList<>();
 	
+	/**
+	 * This is a list of small objects which are used to produce effects on the client side
+	 */
 	public static List<IRunnableTask> runClients = new ArrayList<>();
+	
+	/**
+	 * This is a list of small objects used to produce effects on server side
+	 */
 	public static List<IRunnableTask> runServers = new ArrayList<>();
 	
+	/**
+	 * Whether the spellspace's borders are rendered solid by the Salt Effigy
+	 */
 	protected boolean isSolid = false;
 	
-	
+	/**
+	 * Constructs spellspace in the given dimension
+	 * @param dimension
+	 */
 	public SpellSpace(int dimension) {
 		this.dimension = dimension;
 	}
 	
+	/**
+	 * Whether the spellspace is removed and should not be considered a real spellspace
+	 * @return
+	 */
 	public boolean isRemoved() { 
 		return id == -1;
 	}
 	
+	/**
+	 * Generate spellspace from NBT
+	 * @param cmp the NBT
+	 */
 	public SpellSpace(NBTTagCompound cmp) {
 		this(cmp.getInteger("Dimension"));
 		this.deserializeNBT(cmp);
 	}
 	
+	/**
+	 * Creates particle effect indicating spellspace was created
+	 */
 	public void postInit() {
 		System.out.println("Spell space generating particles now");
 		for (int i = 0; i < 50; i++) {
@@ -124,6 +190,9 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 		}
 	}
 	
+	/**
+	 * Initializes inner area of spellspace
+	 */
 	public void initShape() {
 		System.out.println("Initting shape");
 		BlockPos pos = headPos;//edges.get(((new Random()).nextInt(edges.size())));
@@ -149,7 +218,7 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 			boolean foundShape = false;
 			
 			
-			foundShape = experimentalLoopFloodFill(startPos, shape1, AREA_TOLERANCE*2);//floodFill(0, shape1, startPos, AREA_TOLERANCE );
+			foundShape = forLoopFloodFill(startPos, shape1, AREA_TOLERANCE*2, edges);//floodFill(0, shape1, startPos, AREA_TOLERANCE );
 			
 			
 			
@@ -176,7 +245,15 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 		}
 	}
 	
-	public boolean experimentalLoopFloodFill(BlockPos starter, List<BlockPos> shape, int tolerance) {
+	/**
+	 * A flood-fill algorithm using a for loop to initialize inside of spellspace. Intended so that we don't create stack overflow errors, but honestly isn't that great
+	 * @param starter the position to start filling from
+	 * @param shape the list to be used as a shape to add blocks to
+	 * @param tolerance the iteration at which to consider flood-filling failed, because if you can't find the edge you gotta stop somewhere
+	 * @param edges the edges of the shape to be filled
+	 * @return whether floodFill was successful
+	 */
+	public boolean forLoopFloodFill(BlockPos starter, List<BlockPos> shape, int tolerance, List<BlockPos> edges) {
 
 		List<BlockPos> nextIteration = new ArrayList<>();
 		nextIteration.add(starter);
@@ -186,6 +263,9 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 			nextIteration.clear();
 			for (BlockPos checking : nextIter) {
 
+				if (!getWorld().isValid(checking)) {
+					return false;
+				}
 				//getWorld().setBlockState(checking, Blocks.FIRE.getDefaultState());
 				shape.add(checking);
 				
@@ -212,7 +292,14 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 		return nextIteration.isEmpty();
 	}
 	
-	
+	/**
+	 * Older algorithm using recursion, scrapped because we want to avoid stackOverflowErrors and loops are always more efficient
+	 * @param index the index we're recursing on
+	 * @param shape the shape we're adding blocks to
+	 * @param starter the position to start flood-filling from
+	 * @param tolerance the point at which we have to stop flood-filling and consider flood-fill-ment failed because otherwise the game would crash
+	 * @return
+	 */
 	public boolean floodFill(int index, List<BlockPos> shape, BlockPos starter, int tolerance) {
 		if (index > tolerance) {
 			System.out.println("Exceeded tolerance");
@@ -233,6 +320,13 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 		return r;
 	}
 	
+	/**
+	 * Returns positions of all instances of tile entities extending/implementing this class in spellSpace which satisfy the predicate
+	 * @param <T> the class to look for as a Type Parameter
+	 * @param toCheck the class to look for--you still need to define this... 
+	 * @param pred the predicate used to further check each instance of this class
+	 * @return
+	 */
 	public <T> List<BlockPos> getPositionsOfInstancesInSpace(Class<T> toCheck, Predicate<? super T> pred) {
 		List<BlockPos> ls = new ArrayList<>();
 		for (BlockPos pos : this.getInnerSpace()) {
@@ -244,10 +338,23 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 		return ls;
 	}
 	
+	/**
+	 * Returns positions of all instances of tile entities extending/implementing this class in spellSpace
+	 * @param <T> the class to look for as a Type Parameter
+	 * @param toCheck the class to look for--you still need to define this... 
+	 * @return
+	 */
 	public <T> List<BlockPos> getPositionsOfInstancesInSpace(Class<T> toCheck) {
 		return this.getPositionsOfInstancesInSpace(toCheck, Predicates.alwaysTrue());
 	}
 	
+	/**
+	 * Returns all instances of tile entities extending/implementing this class in spellSpace which satisfy the predicate as the class defined in the {@code toCheck} parameter
+	 * @param <T> the class to look for as a Type Parameter
+	 * @param toCheck the class to look for--you still need to define this... 
+	 * @param pred the predicate used to further check each instance of this class
+	 * @return
+	 */
 	public <T> List<T> getInstancesInSpace(Class<T> toCheck, Predicate<? super T> pred) {
 		List<T> ls = new ArrayList<>();
 		for (BlockPos pos : this.getInnerSpace()) {
@@ -259,6 +366,7 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 	}
 	
 	public BlockPos getHeadPos() {
+		
 		return headPos;
 	}
 	
@@ -274,41 +382,81 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 		this.id = id;
 	}
 	
-	
+	/**
+	 * Returns all instances of tile entities extending/implementing this class in spellSpace
+	 * @param <T> the class to look for as a Type Parameter
+	 * @param toCheck the class to look for--you still need to define this... 
+	 * @return
+	 */
 	public <T> List<T> getInstancesInSpace(Class<T> toCheck) {
 		return this.getInstancesInSpace(toCheck, Predicates.alwaysTrue());
 	}
 	
+	/**
+	 * 
+	 * Returns positions of all spellComponents
+	 * @return
+	 */
 	public List<BlockPos> getPositionsOfComponents() {
 		return getPositionsOfInstancesInSpace(ISpellComponent.class);
 	}
 	
+	/**
+	 * Returns all spellComponents
+	 * @return
+	 */
 	public List<ISpellComponent> getComponents() {
 		return getInstancesInSpace(ISpellComponent.class);
 	}
 	
+	/**
+	 * Returns the component at this pos, or null if it is not a component
+	 * @param pos
+	 * @return
+	 */
 	public ISpellComponent getComponent(BlockPos pos) {
 		return this.getWorld().getTileEntity(pos) instanceof ISpellComponent ? (ISpellComponent)this.getWorld().getTileEntity(pos) : null;
 	}
 	
+	/**
+	 * Returns the tile entity acting as a border-maker at this position, or null if no such tile entity exists
+	 * @param pos
+	 * @return
+	 */
 	public ISpellBorder getBorderPiece(BlockPos pos) {
 		return this.getWorld().getTileEntity(pos) instanceof ISpellBorder ? (ISpellBorder) this.getWorld().getTileEntity(pos) : null;
 	}
 	
+	/**
+	 * Returns the SpellSpaces instance that governs all the spellspaces of this universe
+	 * @return
+	 */
 	public SpellSpaces getSpellSpaceRegistry() {
 		return SpellSpaces.get();
 	}
 	
+	/**
+	 * Decrements the power of this spellspace by sending the power to the <em>living god of magic itself</em>, the spellspace registry
+	 * @param amount
+	 */
 	public void decrementPower(int amount) {
 		getSpellSpaceRegistry().addPower(this.extractPower(amount));
 	}
 	
+	/**
+	 * Increments the power of this spellspace by taking the power from the <em>living god of magic itself</em>, the spellspace registry
+	 * @param amount
+	 */
 	public void incrementPower(int amount) {
 		getSpellSpaceRegistry().removePower(this.putPower(amount));
 	}
 	
-
-		
+	/**
+	 * Returns all blockPositions adjacent to this one
+	 * @param start
+	 * @param includeVertical whether to check up and down, too
+	 * @return
+	 */
 	public List<BlockPos> getAdjacents(BlockPos start, boolean includeVertical) {
 		List<EnumFacing> f = Lists.newArrayList(includeVertical ? EnumFacing.VALUES : EnumFacing.HORIZONTALS);
 		List<BlockPos> poses = new ArrayList<>();
@@ -318,6 +466,11 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 		return poses;
 	}
 	
+	/**
+	 * Turns a list of BlockPos's into a list of the spell components at those positions (does not add null values)
+	 * @param poses
+	 * @return
+	 */
 	public List<ISpellComponent> getSpellComponentsFor(List<BlockPos> poses ) {
 		List<ISpellComponent> ls = new ArrayList<>();
 		for (BlockPos p : poses) {
@@ -326,29 +479,50 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 		return ls;
 	}
 
-		
+	/**
+	 * Returns the amount of energy in this spellspace
+	 * @return
+	 */
 	public int getPower() {
 		return this.energyStorage.getEnergyStored();
 	}
 	
+	/**
+	 * Adds energy
+	 * @param power
+	 * @return
+	 */
 	public int putPower(int power) {
 		return energyStorage.receiveEnergy(power, false);
 	}
 	
+	/**
+	 * Removes energy
+	 * @param power
+	 * @return
+	 */
 	public int extractPower(int power) {
 		return energyStorage.extractEnergy(power, false);
 	}
 	
 
-	
+	/**
+	 * Gets anything which checks for spellspace chain executions at this position
+	 * @param pos
+	 * @return
+	 */
 	public ISpellChainListener getChainListener(BlockPos pos) {
 		
 		return this.getComponent(pos) instanceof ISpellChainListener ? (ISpellChainListener)this.getComponent(pos) : null;
 	}
 	
-
-	
-	public void makeBordersSolid(boolean solid) {
+	/**
+	 * Makes the borders of this space solid or not
+	 * TODO
+	 * @param canPass the uuid's which can pass through
+	 * @param solid whether to be solid or not
+	 */
+	public void makeBordersSolid(boolean solid, UUID...canPass) {
 		this.isSolid = solid;
 		for (BlockPos pos : this.getOutline()) {
 			if (getSpellObject(pos) instanceof ISpellBorder) {
@@ -365,79 +539,123 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 		}
 	}
 	
+	/**
+	 * Intended to allow a server spellspace to run an event on client, but is currently <em> very</em> broken
+	 * @param event
+	 */
 	public void causeEventOnClient(IRunnableTask event) {
 		//Messages.INSTANCE.sendToAll(new StringMessage(event));
 		runClients.add(event);
 	}
 	
+	/**
+	 * Returns the tile entity of type spell object at this pos
+	 * @param pos
+	 * @return
+	 */
 	public ISpellObject getSpellObject(BlockPos pos) {
 		return getWorld().getTileEntity(pos) instanceof ISpellObject ? (ISpellObject) getWorld().getTileEntity(pos) : null;
 	}
 	
+	/**
+	 * Whether the borders of this spellspace are currently solid
+	 * @return
+	 */
 	public boolean areBordersSolid() {
 		
 		return isSolid;
 		
 	}
 	
-	
-	
+	/**
+	 * Cast a spell using this spellspace! 
+	 */
 	public void start() {
 		start((ServerPos)null, new HashMap<>());
 	}
 	
+	/**
+	 * Cast a spell using this spellspace!
+	 * @param en The entity to use as the focal point of the spell
+	 * @param mp the map representing inputs to use initially, can be empty but not null (check?) TODO
+	 */
 	public void start(Entity en, Map<BlockPos, SpellIOMap> mp) {
 		if (isRemoved()) {
 			System.out.println("Spell space cannot run because it has been removed");
 		}
-		SpellInstance runner = new SpellInstance(en);
+		Spell runner = new Spell(en);
 		this.runningInstances.add(runner);
 		runner.start(mp);
 	}
 	
+	/**
+	 * Cast a spell using this spellspace!
+	 * @param en The position to use as the focal point of the spell
+	 * @param mp the map representing inputs to use initially, can be empty but not null (check?) TODO
+	 */
 	public void start(ServerPos runPos, Map<BlockPos, SpellIOMap> mp) {
 		if (isRemoved()) {
 			System.out.println("Spell space cannot run because it has been removed");
 		}
-		SpellInstance runner = new SpellInstance(runPos);
+		Spell runner = new Spell(runPos);
 		this.runningInstances.add(runner);
 		runner.start(mp);
 	}
 	
+	/**
+	 * Runs a tick where the spellspace does lovely stuff like continue the execution of each spell running under it and yell angrily at the client about how it's not initialized properly
+	 * and, of course, remove itself from the world if any of its significant border pieces is broken
+	 */
 	public void tick() {
+		for (BlockPos pos : this.sigPoints.keySet()) {
+			if (!NBTUtil.writeBlockState(new NBTTagCompound(), getWorld().getBlockState(pos)).equals(sigPoints.get(pos))) {
+				SpellSpaces.get().removeSpellSpace(this);
+			}
+		}
 		if (isRemoved()) {
 			return;
 		}
 	
-		List<SpellInstance> runners = new ArrayList<>(this.runningInstances);
-		for (SpellInstance run : runners) {
-			run.tick();
-		}
+		
 		if (this.shape.isEmpty() && !this.edges.isEmpty()) {
 			this.initShape();
 		}
 		if (this.edges.isEmpty()) {
 			System.out.println("SpellSpace has no edges!");
 		}
-		for (BlockPos pos : this.sigPoints.keySet()) {
-			if (!NBTUtil.writeBlockState(new NBTTagCompound(), getWorld().getBlockState(pos)).equals(sigPoints.get(pos))) {
-				SpellSpaces.get().removeSpellSpace(this);
+		
+		
+	}
+	
+	/**
+	 * Whether the spellspace is running
+	 * @return
+	 */
+	public boolean isRunning() {
+		for (Spell spell : runningInstances) {
+			if (spell.isRunning()) {
+				return true;
 			}
 		}
-		
-		
+		return false;
 	}
 	
-	public boolean isRunning() {
-		return !this.runningInstances.isEmpty();
-	}
-	
-	public void end(SpellInstance runner) {
+	/**
+	 * removes Spell from the list of running spells
+	 * @param runner
+	 */
+	public void removeSpell(Spell runner) {
 		this.runningInstances.remove(runner);
 	}
 	
-	
-	
+	/**
+	 * Initializes spellspace
+	 * @param id the id the spellspace is to be registered under
+	 * @param height how tall the spell space is
+	 * @param head the position which is considered the 'head' of the spellspace
+	 * @param edges the edges of the spellspace
+	 * @param sigPoints the positions where specific blocks used to detect the integrity of the spellspace are (if they break, the entire spellspace does)
+	 */
 	public void init(long id, int height, BlockPos head, List<BlockPos> edges, List<BlockPos> sigPoints) {
 		this.edges = edges;
 		this.headPos = head;
@@ -449,7 +667,7 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 		}
 		this.id = id;
 		this.height = height;
-
+		
 		
 		this.initShape();
 
@@ -457,6 +675,9 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 		postInit();
 	}
 	
+	/**
+	 * This registers all spell objects within the spellspace as parts of Le Empire of This SpellSpace
+	 */
 	public void partsInit() {
 		System.out.println("Adding all parts to space");
 		for (BlockPos pos : this.getInnerSpace()) {
@@ -488,15 +709,27 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 		}
 	}
 	
+	/**
+	 * Forcefully obtains world instance from server
+	 * @return
+	 */
 	public World getWorld() {
 		
 		return FMLCommonHandler.instance().getMinecraftServerInstance().getWorld(dimension);
 	}
 	
+	/**
+	 * Gets a world instance from server, but only if it exists, of course
+	 * @return
+	 */
 	public World getWorldSoft() {
 		return DimensionManager.getWorld(this.dimension);
 	}
 	
+	/**
+	 * Gets the server, used so that we don't always have to write out Goeturgy.proxy.getServer() or FMLCommonHandler.instance().getMinecraftServerInstance();
+	 * @return
+	 */
 	public MinecraftServer getServer() {
 		if (Minecraft.getMinecraft() != null) {
 			return null;
@@ -520,7 +753,14 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 		return new ArrayList<>(edges);
 	}
 	
+	/**
+	 * Adds a block to the "edge" list of the spellspace
+	 * @param pos
+	 */
 	public void addEdge(BlockPos pos) {
+		if (getWorld().getTileEntity(pos) instanceof ISpellBorder) {
+			this.sigPoints.put(pos, NBTUtil.writeBlockState(new NBTTagCompound(), getWorld().getBlockState(pos)));
+		}
 		this.edges.add(pos);
 		System.out.println("We just added a block to the outline...?");
 	}
@@ -529,12 +769,20 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 		return new ArrayList<>(shape);
 	}
 	
+	/**
+	 * Gets both shape and edges as one list
+	 * @return
+	 */
 	public List<BlockPos> getTotalShape() {
 		List<BlockPos> sh = new ArrayList<>(shape);
 		sh.addAll(edges);
 		return sh;
 	}
 
+	/**
+	 * Gets the entire inner spatial zone of the spellspace, commonly used
+	 * @return
+	 */
 	public List<BlockPos> getInnerSpace() {
 		List<BlockPos> sh = new ArrayList<>(getTotalShape());
 		for (BlockPos pos : getTotalShape()) {
@@ -545,6 +793,10 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 		return sh;
 	}
 
+	/**
+	 * Gets the outlines of the spellspace, in three-dimensions, of course
+	 * @return
+	 */
 	public List<BlockPos> getOutline() {
 		List<BlockPos> sh = new ArrayList<>(getEdges());
 		for (BlockPos pos : new ArrayList<>(sh)) {
@@ -612,10 +864,19 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 		});
 		this.runningInstances = GMNBT.createList(nbt.getTagList("Runners", NBT.TAG_COMPOUND), (base) -> {
 			NBTTagCompound comp = (NBTTagCompound)base;
-			SpellInstance runner = this.new SpellInstance(comp);
+			Spell runner = this.new Spell(comp);
 			return runner;
 		});
-		this.partsInit();
+		for (BlockPos pos : this.sigPoints.keySet()) {
+			ISpellObject comp = this.getSpellObject(pos);
+			if (comp != null) {
+				comp.setSpaceID(this.id);
+				comp.setSpellSpace(this);
+			} else {
+				System.out.println("Missing spell component for spellspace " + id + " at " + pos);
+			}
+		}
+		//this.partsInit();
 		//this.lastTickInputs.clear();;
 		/*
 		 * GMNBT.forEach(nbt.getTagList("LastTickInputs", NBT.TAG_COMPOUND), (c) -> {
@@ -627,18 +888,49 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 		//if (nbt.hasKey("MagickingPos")) magickingPos = NBTUtil.getPosFromTag(nbt.getCompoundTag("MagickingPos"));
 	}
 	
+	/**
+	 * This runs server ticks for the spellspace, should any be needed. Most spellspace logic is run using player ticks, so that unnecessary world-loading is not performed
+	 * @param event
+	 */
 	@SubscribeEvent
 	public static void server(ServerTickEvent event) {
 		for (IRunnableTask task : runServers) {
 			task.run();
 		}
+		
+		List<SpellSpace> spaces = new ArrayList<>(SpellSpaces.get().getAsList());
+		for (SpellSpace space : spaces) {
+			if (space.isRemoved()) {
+				SpellSpaces.get().removeSpellSpace(space);
+				SpellSpaces.get().remove(space);
+				continue;
+			}
+			List<Spell> runners = new ArrayList<>(space.runningInstances);
+			for (Spell run : runners) {
+				
+				if (run.isRunning() && !space.isFullyLoaded()) {
+					space.forceLoad(false);
+				}
+				run.tick();
+			}
+		}
 	}
 	
+	/**
+	 * This runs spell-space ticks if a player is present in the dimension of the spellspace
+	 * @param event
+	 */
 	@SubscribeEvent
 	public void update(PlayerTickEvent event) {
 		if (event.player.world.isRemote) return;
 		if (event.player.world.provider.getDimension() != this.dimension) return;
-		if (isRemoved()) return;
+		
+		this.tick();
+		
+		if (isRemoved()) {
+			SpellSpaces.get().removeSpellSpace(this);
+			return;
+		}
 		for (BlockPos pos : this.getOutline()) {
 			//renderIllusion(Blocks.LEAVES2.getDefaultState(), new ServerPos(pos, dimension));
 			spawnParticles(EnumParticleTypes.TOWN_AURA, true, (new Vec3d(pos)).add(new Vec3d(0.5, 0.5, 0.5)), new Vec3d(1, 1, 1), dimension, 1);
@@ -652,7 +944,6 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 		SpellSpace space = this;
 		//if (sp != null) {
 			//for (SpellSpace space : sp.getAsList()) {
-		space.tick();
 		if (space.shape.isEmpty()) {
 			space.initShape();
 		}
@@ -671,20 +962,29 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 	}
 	
 	
-	
-	
+	/**
+	 * Used to check when starter components or the head-block is/are right-clicked
+	 * @param event
+	 */
 	@SubscribeEvent
 	public void rightClick(RightClickBlock event) {
 		if (event.getWorld().isRemote) return;
 		if (event.getWorld() != this.getWorldSoft()) {
 			return;
 		}
-		if (isRemoved()) return;
-		if (this.getComponent(event.getPos()) != null && this.getComponent(event.getPos()).isStarter() && !event.getEntityPlayer().isSneaking()) {
+		if (isRemoved()) {
+			System.out.println("Spellspace has been removed");
+			return;
+		}
+		if (event.getPos().equals(headPos) || this.getComponent(event.getPos()) != null && this.getComponent(event.getPos()).isStarter() && !event.getEntityPlayer().isSneaking()) {
 			this.start();
 		}
 	}
 	
+	/**
+	 * Does rendering for spellspaces on client
+	 * @param event
+	 */
 	@SubscribeEvent
 	public static void clientTick(RenderWorldLastEvent event) {
 		
@@ -708,10 +1008,25 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 		}
 	}
 	
+	/**
+	 * Spawn particles
+	 * @param type Type of particle
+	 * @param thatDistanceThing I honestly have no clue, really
+	 * @param pos position of particles
+	 * @param sped 3d speed vector
+	 * @param d dimension of particle effect
+	 * @param count how many to spawn
+	 * @param args the args, only used for particles .redstone and blockcrack, really
+	 */
 	public void spawnParticles(EnumParticleTypes type, boolean thatDistanceThing, Vec3d pos, Vec3d sped, int d, int count, int...args) {
 		this.causeEventOnClient(new TaskParticles(type, thatDistanceThing, pos, sped, d, count, args));
 	}
 	
+	/**
+	 * Render an  i <strong>m</strong> a <strong>g</strong> i <strong>n</strong> a <strong>r</strong> y  block in the world... 
+	 * @param state
+	 * @param pos
+	 */
 	public void renderIllusion(IBlockState state, ServerPos pos) {
 		
 		this.causeEventOnClient(new TaskIllusion(pos, state));
@@ -729,6 +1044,11 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 		return hasCapability(capability, facing) ? (T) energyStorage : null;
 	}
 	
+	/**
+	 * Whether this position is loaded in the world
+	 * @param pos
+	 * @return
+	 */
 	public boolean isLoaded(BlockPos pos) {
 		if (FMLCommonHandler.instance().getMinecraftServerInstance() == null) {
 			return Minecraft.getMinecraft().world.isBlockLoaded(pos);
@@ -746,10 +1066,18 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 		return false && !isRemoved();
 	}
 	
+	/**
+	 * Whether this spellspace's headPos is loaded
+	 * @return
+	 */
 	public boolean isHeadLoaded() {
 		return isLoaded(this.headPos) && !isRemoved();
 	}
 	
+	/**
+	 * Whether the entire spellspace is loaded
+	 * @return
+	 */
 	public boolean isFullyLoaded() {
 		boolean loaded = true;
 		for (BlockPos pos : this.getTotalShape()) {
@@ -759,10 +1087,9 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 	}
 	
 	/**
-	 * True if can load, false if otherwise
-	 * True if already loaded
-	 * @param justHead
-	 * @return
+	 * Force-load the spell-space's chunks
+	 * @param justHead whether to just load the head of the spellspace (is this ever useful?)
+	 * @return True if successfully loaded, false if otherwise, and True if already loaded
 	 */
 	public boolean forceLoad(boolean justHead) {
 		if (justHead ? isHeadLoaded() : isFullyLoaded()) {
@@ -787,6 +1114,10 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 		}
 	}
 	
+	/**
+	 * Runs when a spell-space is removed, before it is removed (to allow for cancelation)
+	 * @param event
+	 */
 	@SubscribeEvent
 	public static void spellSpace(RemoveSpellSpaceEvent event) {
 		System.out.println(event.getSpellSpace().id + " listening for removal");
@@ -798,36 +1129,93 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 
 	}
 	
-	public class SpellInstance implements INBTSerializable<NBTTagCompound> {
+	/**
+	 * A class representing a Spell, implicitly linked to the SpellSpace class. A spell is just "something" that causes an effect in the world
+	 * @author borah
+	 *
+	 */
+	public class Spell implements INBTSerializable<NBTTagCompound> {
 		
+		/**
+		 * The position where mystical stuff is currently happening in the spell
+		 */
 		public BlockPos magickingPos = null;
 		
+		/**
+		 * The position which the spell is focused at, might be null (must be null if runEntity is not null)
+		 */
 		protected ServerPos runPos;
 		
+		/**
+		 * The entity which the spell is focused at, might be null (must be null if runPos is not null)
+		 */
 		protected Entity runEntity;
 		
+		/**
+		 * The positions in the spellspace which are going to be interpreted next tick by the Spell
+		 */
 		protected List<BlockPos> nextPositions = new ArrayList<>();
 		
+		/**
+		 * These components are to be run after a certain delay
+		 */
+		protected Map<BlockPos, Integer> delayedPositions = new NonNullMap<>(-1);
+		
+		/**
+		 * The tick the spellspace is currently on, 0 if the spellspace is not running
+		 */
 		protected int ticks = 0;
 		
+		/**
+		 * The positions in the spellspace which the Spell interpreted last tick, so that we don't make infinite loops by going back and forth
+		 */
 		protected List<BlockPos> prevPositions = new ArrayList<>();
 		
+		/**
+		 * Inputs used for the next execution stored in each individual spell to avoid two spells trying to activate something simultaneously and interfering with each other
+		 */
 		protected Map<BlockPos, NonNullMap<EnumFacing, NBTTagCompound>> inputsForTick = new NonNullMap<>(() -> new NonNullMap<>(NBTTagCompound::new));
 
+		/**
+		 * All spellspaces within the spellspace that this Spell is attached to
+		 */
 		protected List<SpellSpace> miniSpaces = new ArrayList<>();
 
+		/**
+		 * All headPositions of smaller spellspaces within the spellspace that this spell is attached to
+		 */
 		protected List<ISpellBorder> miniPositions = new ArrayList<>();
 		
-		public SpellInstance(NBTTagCompound comp) {
+		
+		/**
+		 * Create Spell from NBT
+		 * @param comp
+		 */
+		public Spell(NBTTagCompound comp) {
 			this.deserializeNBT(comp);
 		}
 		
-		public SpellInstance(@Nullable ServerPos runPos) {
+		/**
+		 * Create a new spell which is not focused on a specific position
+		 */
+		public Spell() {
+			this((ServerPos)null);
+		}
+		
+		/**
+		 * Create a spell focused at the given position, which may be null
+		 * @param runPos
+		 */
+		public Spell(@Nullable ServerPos runPos) {
 			this.magickingPos = SpellSpace.this.headPos;
 			this.runPos = runPos;
 		}
 		
-		public SpellInstance(@Nullable Entity entity) {
+		/**
+		 * Create a spell focused at the given entity, which may be null
+		 * @param entity
+		 */
+		public Spell(@Nullable Entity entity) {
 			this((ServerPos)null);
 			this.runEntity = entity;
 		}
@@ -867,6 +1255,14 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 				e.setTag("Map", MagicIO.nonNullMapToNBT(inputsForTick.get(pos)));
 				return e;
 			}));
+			
+			cmp.setTag("Delayed", GMNBT.makeList(delayedPositions.keySet(), (pos) -> {
+				NBTTagCompound e = new NBTTagCompound();
+				e.setTag("Pos", NBTUtil.createPosTag(pos));
+				e.setInteger("Delay", delayedPositions.get(pos));
+				return e;
+			}));
+			
 			cmp.setTag("MiniSpaces", GMNBT.makeList(miniSpaces, (sp )-> {return new NBTTagLong(sp.id);} )); 
 			return cmp;
 		}
@@ -898,6 +1294,13 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 				
 				return new Pair<BlockPos, NonNullMap<EnumFacing, NBTTagCompound>>(NBTUtil.getPosFromTag(cmp.getCompoundTag("Pos")), MagicIO.nonNullMapFromNBT(cmp.getTagList("Map", NBT.TAG_COMPOUND)));
 			});
+			
+			this.delayedPositions = GMNBT.createMap(nbt.getTagList("Delayed", NBT.TAG_COMPOUND), ( base) -> {
+				
+				NBTTagCompound cmp = (NBTTagCompound)base;
+				
+				return new Pair<BlockPos, Integer>(NBTUtil.getPosFromTag(cmp.getCompoundTag("Pos")), cmp.getInteger("Delay"));
+			});
 		}
 		
 
@@ -913,6 +1316,12 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 			return ticks != 0;
 		}
 		
+		/**
+		 * Activates a spellspace within the spellspace of this spell
+		 * @param pos
+		 * @param cmp
+		 * @return
+		 */
 		public boolean putInputIntoMiniSpellSpace(BlockPos pos, NonNullMap<EnumFacing, NBTTagCompound> cmp) {
 			ISpellBorder bord = getBorderPiece(pos);
 			if (bord == null) return false;
@@ -934,6 +1343,55 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 			return true;
 		}
 			
+		/**
+		 * Magic wires are not considered actual components. As such, they are handled so that any input put into one end automatically is spit out the other end of a chain of magic wires
+		 * @param wire1 the first wire
+		 * @return a list of positions at the ends of wires and the directions which they would receive input from
+		 */
+		public Map<BlockPos,EnumFacing> findEndsOfMagicWireChain(MagicWire wire1) {
+			Map<BlockPos,EnumFacing> foundPositions = new HashMap<>();
+			List<BlockPos> visited = new ArrayList<>();
+			List<BlockPos> checkPoses = new ArrayList<>();
+			checkPoses.add(wire1.getPos());
+			for (int i = 0; i <= SpellSpace.this.shape.size(); i++) {
+				List<BlockPos> checkings = new ArrayList<>(checkPoses);
+				checkPoses.clear();
+				if (checkings.isEmpty()) break;
+				for (BlockPos curPos : checkings) {
+					MagicWire wire = (MagicWire)getComponent(curPos);
+					System.out.println("Magic wire chain at " + curPos);
+					for (int j = 0; j < 100; j++) {
+						Random r = new Random();
+						spawnParticles(EnumParticleTypes.CRIT_MAGIC, false, (new Vec3d(curPos)).add(new Vec3d(0.5, 0.5, 0.5)), new Vec3d(2*r.nextDouble()-1, 2*r.nextDouble() -1, 2*r.nextDouble() - 1), dimension, 1);
+					}
+					List<EnumFacing> outputs = wire.getOutputSides();
+					for (EnumFacing f : outputs) {
+						BlockPos otherPos = curPos.offset(f);
+						ISpellComponent otherComp = getComponent(otherPos);
+						if (otherComp instanceof MagicWire) {
+							MagicWire otherWire = (MagicWire) otherComp;
+							if (otherWire.isInput(f.getOpposite())) {
+								checkPoses.add(otherPos);
+							}
+						} else {
+							if (otherComp != null) {
+								System.out.println("Found spell component " + otherComp.getClass() + " at " + curPos + " in magic wire chain");
+								foundPositions.put(otherPos, f.getOpposite());
+							}
+						}
+					}
+					visited.add(curPos);
+				}
+				
+			}
+			return foundPositions;
+		}
+		
+		/**
+		 * Sends the output of a static component to adjacent components
+		 * @param pos position of static component
+		 * @param vertical whether to send them out veritcally (this is always true, so it doesn't really matter... but we'll keep it just in case)
+		 */
 		public void disseminateStaticOutput(BlockPos pos, boolean vertical) {
 			ISpellComponent comp = getComponent(pos);
 			if (comp == null) return;
@@ -942,6 +1400,10 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 				modPos = runPos;
 			}
 			NonNullMap<EnumFacing, NBTTagCompound> returns = runEntity != null ? comp.getStaticOutput(runEntity, modPos) : comp.getStaticOutput(modPos);
+			if (returns == null) {
+				this.end(false, pos);
+				return;
+			}
 			for (EnumFacing face : (vertical ? EnumFacing.VALUES : EnumFacing.HORIZONTALS)) {
 				ISpellComponent other = getComponent(pos.offset(face));
 				if (other == null) {
@@ -950,18 +1412,33 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 				}
 				
 				NBTTagCompound cmp = returns.get(face);
-				if (other.accepts(face.getOpposite(), cmp)) {
+				if (other instanceof MagicWire) {
+					Map<BlockPos,EnumFacing> toPut = this.findEndsOfMagicWireChain((MagicWire)other);
+					for (BlockPos putting : toPut.keySet()) {
+						if (getComponent(putting).accepts(toPut.get(putting), cmp)) {
+							this.putInputs(getComponent(putting), toPut.get(putting), cmp);
+						}
+					}
+				}
+				else if (other.accepts(face.getOpposite(), cmp)) {
 					//NonNullMap<EnumFacing, NBTTagCompound> inps = new NonNullMap<>(NBTTagCompound::new);
 					//inps.put(face.getOpposite(), cmp);
 					//other.getInputs().put(face.getOpposite(), cmp);
 					this.putInputs(other, face.getOpposite(), cmp);
 					//this.nextPositions.add(other.getPos());
-					if (other instanceof MagicWire) {
-						this.markForActivationNextTick(other.getPos(), null);
-					}
+					
 				}
 			}
 		}
+		
+		/**
+		 * Activates one component in the spellspace and sends out the appropriate event
+		 * @param <T> The type of component being activated
+		 * @param inputs the inputs to give to this component
+		 * @param comp the component to be activated
+		 * @param statique whether the component is being activated statically
+		 * @return outputs or null if unsuccessful activation
+		 */
 		public <T extends TileEntity> NonNullMap<EnumFacing, NBTTagCompound> activate(NonNullMap<EnumFacing, NBTTagCompound> inputs, ISpellComponent comp, boolean statique) {
 			if (MinecraftForge.EVENT_BUS.post(new ComponentActivationEvent<T>(this, comp))) {
 				System.out.println("Activation of " + comp.getString() + " canceled");
@@ -980,16 +1457,31 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 			}
 			
 			System.out.println("Activation of " + comp.getString() + (returns == null ? " unsuccessful" : " successful"));
+			System.out.println("Done with inputs "+ inputs);
+			if (returns != null) System.out.println("Returned " + returns);
 			return returns;
 		}
 		
+		/**
+		 * The other activate, but allowing you to put a tile entity to save the trouble of writing (ISpellComponent)c
+		 * @param <T>
+		 * @param inputs
+		 * @param c
+		 * @param statique
+		 * @return
+		 * @see activate(NonNullMap<EnumFacing, NBTTagCompound>, ISpellComponent, boolean)
+		 */
 		public <T extends TileEntity> NonNullMap<EnumFacing, NBTTagCompound> activate(NonNullMap<EnumFacing, NBTTagCompound> inputs, T c, boolean statique) {
 			
 			return this.<T>activate(inputs, (ISpellComponent)c, statique);
 		}
 		
-		
-		public void markForActivationNextTick(BlockPos toActivate, NonNullMap<EnumFacing, NBTTagCompound> inputs) {
+		/**
+		 * Marks a component to be activated on the next tick of the spell
+		 * @param toActivate position of component to be activated
+		 * @param inputs inputs to give the component (may be null)
+		 */
+		public void markForActivationNextTick(BlockPos toActivate, @Nullable NonNullMap<EnumFacing, NBTTagCompound> inputs) {
 			ISpellComponent comp = getComponent(toActivate);
 			
 			if (comp == null) {
@@ -997,11 +1489,33 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 			}
 			
 			this.nextPositions.add(toActivate);
+			prevPositions.remove(toActivate);
 			if (inputs != null) {
 				inputsForTick.put(comp.getPos(), inputs);
 			}
 		}
 		
+		public void markForActivationAfterDelay(BlockPos toActivate, int delay, @Nullable NonNullMap<EnumFacing, NBTTagCompound> inputs) {
+			//TODO
+			ISpellComponent comp = getComponent(toActivate);
+			
+			if (comp == null) {
+				return;
+			}
+			
+			this.delayedPositions.put(toActivate, delay);
+			prevPositions.remove(toActivate);
+			if (inputs != null) {
+				inputsForTick.put(comp.getPos(), inputs);
+			}
+		}
+		
+		/**
+		 * Puts inputs into component
+		 * @param comp component
+		 * @param f side
+		 * @param inputs inputs as a nbttagcompound
+		 */
 		public void putInputs(ISpellComponent comp, EnumFacing f, NBTTagCompound inputs) {
 			NonNullMap<EnumFacing, NBTTagCompound> inps = comp.getInputs();
 			inps.put(f, inputs);
@@ -1009,10 +1523,18 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 			inputsForTick.put(comp.getPos(), inps);
 		}
 		
-		public void activateAndDisseminateOutput(BlockPos pos, boolean starter, NonNullMap<EnumFacing, NBTTagCompound> inputs, List<BlockPos> prevPositions) {
+		/**
+		 * Activates this component and puts its output values into the adjacent components
+		 * @param pos the position to activate
+		 * @param starter whether this component is starting the spell
+		 * @param inputs the inputs to give this component
+		 * @param prevPositions the previous positions activated to avoid reactivation
+		 * @return 0 for continuation, 1 for successful termination, 2 for failed termination
+		 */
+		public int activateAndDisseminateOutput(BlockPos pos, boolean starter, NonNullMap<EnumFacing, NBTTagCompound> inputs, List<BlockPos> prevPositions) {
 			
 			ISpellComponent comp = getComponent(pos);
-			if (comp == null) return;
+			if (comp == null) return 2;
 			int energy = comp.getRequiredPowerFromNBT(inputs, comp.getServerPos());
 			
 			ISpellChainListener listener = getChainListener(pos);
@@ -1034,14 +1556,18 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 						lis.activated(this, pos);
 					}
 				}
+				if (returns == FORCED_END) {
+					this.end(true, pos);
+					return 0;
+				}
 			} else {
-				this.end(false, pos);
+				//this.end(false, pos);
 				for (ISpellChainListener lis : listeners) {
 					if (lis.isPartOfChain(this, pos)) {
 						lis.finished(this, pos, false);
 					}
 				}
-				return;
+				return 1;
 			}
 			
 			
@@ -1057,13 +1583,28 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 					continue;
 				}
 				NBTTagCompound cmp = returns.get(face);
-				if (!prevPositions.contains(other.getPos()) && other.accepts(face.getOpposite(), cmp)) {
-					didSomething = true;
-					didSomethingHere = true;
-					this.putInputs(other, face.getOpposite(), cmp);
-					
-					//other.getInputs().put(face.getOpposite(), cmp);
-					nextPositions.add(other.getPos());
+				if (!prevPositions.contains(other.getPos())) {
+					if (other instanceof MagicWire) {
+						Map<BlockPos,EnumFacing> toPut = this.findEndsOfMagicWireChain((MagicWire)other);
+						for (BlockPos putting : toPut.keySet()) {
+
+							System.out.println("Magic wire chain end at " + putting);
+							if (starter || getComponent(putting).accepts(toPut.get(putting), cmp)) {
+								didSomething = true;
+								didSomethingHere = true;
+								this.putInputs(getComponent(putting), toPut.get(putting), cmp);
+								nextPositions.add(putting);
+							}
+						}
+					}
+					else if (other.accepts(face.getOpposite(), cmp) || cmp.hasNoTags() && other.acceptsEmpty(face.getOpposite())) {
+						didSomething = true;
+						didSomethingHere = true;
+						this.putInputs(other, face.getOpposite(), cmp);
+						
+						//other.getInputs().put(face.getOpposite(), cmp);
+						nextPositions.add(other.getPos());
+					}
 				}
 				
 				if (listener != null) {
@@ -1085,12 +1626,20 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 					}
 				}
 			//}
+			return 0;
 		}
 		
+		
+		/**
+		 * Starts the spell
+		 */
 		public void start() {
 			start(new HashMap<>());
 		}
 		
+		/**
+		 * Used to accumulate power into the spellspace from all power sources TODO
+		 */
 		public void gatherPower() {
 			//TODO
 			//TODO
@@ -1099,6 +1648,10 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 			//TODO
 		}
 		
+		/**
+		 * Starts spell
+		 * @param initialWithInputs this map represents the initially given input values
+		 */
 		public void start(Map<BlockPos, SpellIOMap> initialWithInputs) {
 			
 			
@@ -1155,7 +1708,11 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 			for (BlockPos pos : starters) {
 				System.out.println("Starter " + getComponent(pos));
 				magickingPos = pos;
-				this.activateAndDisseminateOutput(pos, true, new NonNullMap<EnumFacing, NBTTagCompound>(NBTTagCompound::new), new ArrayList<>());
+				int status = this.activateAndDisseminateOutput(pos, true, new NonNullMap<EnumFacing, NBTTagCompound>(NBTTagCompound::new), new ArrayList<>());
+				if (status == 1 || status == 2) {
+					end(status == 1, pos);
+					return;
+				}
 				for (EnumFacing f : EnumFacing.VALUES) {
 					if (getComponent(pos.offset(f)) != null && !nextPositions.contains(pos.offset(f))) {
 						nextPositions.add(pos.offset(f));
@@ -1170,14 +1727,23 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 			ticks++;
 			
 		}
-		
+		/**
+		 * Ticks the spell
+		 */
 		public void tick() {
 			if (this.ticks != 0) {
 				if (MinecraftForge.EVENT_BUS.post(new SpellSpaceTickingEvent(this, ticks))) {
 					System.out.println("Spell space casting ticking was suspended");
 					return;
 				}
-				
+				List<BlockPos> dels = new ArrayList<>(this.delayedPositions.keySet());
+				for (BlockPos delPos : dels) {
+					this.delayedPositions.put(delPos, this.delayedPositions.get(delPos) - 1);
+					if (this.delayedPositions.get(delPos) <= 0) {
+						nextPositions.add(delPos);
+						delayedPositions.remove(delPos);
+					}
+				}
 				
 				System.out.println("Ticking " + ticks);
 				boolean didSomething = false;
@@ -1196,15 +1762,22 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 					}
 					//NonNullMap<EnumFacing, NBTTagCompound> cmp = lastTickInputs.get(pos);
 					//if (cmp == null) continue;
-					this.activateAndDisseminateOutput(pos, false, inputsForTick.get(pos), prevPositions);
+					int status = this.activateAndDisseminateOutput(pos, false, inputsForTick.get(pos), prevPositions);
+					if (status == 1 || status == 2) {
+						end(status == 1, pos);
+						return;
+					}
 				}
 				
-				if (didSomething || !nextPositions.isEmpty()) {
+				if (didSomething || !nextPositions.isEmpty() || !delayedPositions.isEmpty()) {
 					ticks++;
-	
-					for (int i = 0; i < 100; i++) {
-						Random r = new Random();
-						spawnParticles(EnumParticleTypes.CRIT_MAGIC, false, (new Vec3d(magickingPos)).add(new Vec3d(0.5, 0.5, 0.5)), new Vec3d(2*r.nextDouble()-1, 2*r.nextDouble() -1, 2*r.nextDouble() - 1), dimension, 1);
+					
+					
+					if (didSomething) {
+						for (int i = 0; i < 80; i++) {
+							Random r = new Random();
+							spawnParticles(EnumParticleTypes.CRIT_MAGIC, false, (new Vec3d(magickingPos)).add(new Vec3d(0.5, 0.5, 0.5)), new Vec3d(2*r.nextDouble()-1, 2*r.nextDouble() -1, 2*r.nextDouble() - 1), dimension, 1);
+						}
 					}
 				} else {
 					
@@ -1214,6 +1787,11 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 			}
 		}
 		
+		/**
+		 * Ends the spell
+		 * @param success whether it ended successfully
+		 * @param endPos where it ended
+		 */
 		public void end(boolean success, BlockPos endPos) {
 			MinecraftForge.EVENT_BUS.post(new EndSpellSpaceMagicEvent(this, success));
 			System.out.println("Spell ended " + (success ? "successfully" : "unsuccessfully") + " at " + endPos);
@@ -1230,10 +1808,22 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 			for (int i = 0; i < 100; i++) {
 				Random r = new Random();
 				SpellSpace.this.spawnParticles(success ? EnumParticleTypes.ENCHANTMENT_TABLE : EnumParticleTypes.LAVA, false, (new Vec3d(endPos)).add(new Vec3d(0.5, 0.5, 0.5)), new Vec3d(2*r.nextDouble()-1, 2*r.nextDouble() -1, 2*r.nextDouble() - 1), dimension, 1);
+				if (runPos != null) {
+					SpellSpace.this.spawnParticles(success ? EnumParticleTypes.ENCHANTMENT_TABLE : EnumParticleTypes.LAVA, false, (new Vec3d(runPos)).add(new Vec3d(0.5, 0.5, 0.5)), new Vec3d(2*r.nextDouble()-1, 2*r.nextDouble() -1, 2*r.nextDouble() - 1), dimension, 1);
+				}
+				if (runEntity != null) {
+					SpellSpace.this.spawnParticles(success ? EnumParticleTypes.ENCHANTMENT_TABLE : EnumParticleTypes.LAVA, false, (runEntity).getPositionVector().add(new Vec3d(0.5, 0.5, 0.5)), new Vec3d(2*r.nextDouble()-1, 2*r.nextDouble() -1, 2*r.nextDouble() - 1), dimension, 1);
+					
+				}
+				
 			}
-			SpellSpace.this.end(this);
+			SpellSpace.this.removeSpell(this);
 		}
 		
+		/**
+		 * Returns the spellspace this spell is connected to. Since a spell is an inner class, it just returns the outer class
+		 * @return
+		 */
 		public SpellSpace getSpellSpace() {
 			return SpellSpace.this;
 		}

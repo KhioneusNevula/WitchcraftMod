@@ -11,6 +11,7 @@ import com.gm910.goeturgy.util.Translate;
 
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -44,6 +45,12 @@ public class ItemPearl extends ItemBase {
 		return stack;
 	}
 	
+	@Override
+	public boolean hasEffect(ItemStack stack) {
+		// TODO Auto-generated method stub
+		return getLinkedBlock(stack) != null;
+	}
+	
 	public static ServerPos getLinkedBlock(ItemStack stack) {
 		if (!stack.hasTagCompound()) return null;
 		//if (!stack.getTagCompound().hasKey(LINKED_DATA_TAG)) return null;
@@ -75,21 +82,39 @@ public class ItemPearl extends ItemBase {
 	}
 	
 	@Override
+	public boolean itemInteractionForEntity(ItemStack stack, EntityPlayer playerIn, EntityLivingBase target,
+			EnumHand hand) {
+		if (playerIn.world.isRemote) return super.itemInteractionForEntity(stack, playerIn, target, hand);
+		SpellSpace space = getSpellSpace(stack);
+		if (space != null) {
+			if (!space.isFullyLoaded()) {
+				space.forceLoad(false);
+			}
+			space.start(target, new HashMap<>());
+		}
+		return super.itemInteractionForEntity(stack, playerIn, target, hand);
+	}
+	
+	@Override
 	public EnumActionResult onItemUse(EntityPlayer player, World worldIn, BlockPos pos, EnumHand hand,
 			EnumFacing facing, float hitX, float hitY, float hitZ) {
 		
 		if (player.isSneaking()) {
 			if (worldIn.getBlockState(pos).getBlock() == BlockInit.PEARL_BLOCK) {
 				linkToBlock(new ServerPos(pos, worldIn), player.getHeldItem(hand));
+				return super.onItemUse(player, worldIn, pos, hand, facing, hitX, hitY, hitZ);
 			}
-		} else {
+		}
 			
-			if (worldIn.isRemote) return super.onItemUse(player, worldIn, pos, hand, facing, hitX, hitY, hitZ);
-			SpellSpace space = getSpellSpace(player.getHeldItem(hand));
-			if (space != null) {
-				if (!space.isFullyLoaded()) {
-					space.forceLoad(false);
-				}
+		if (worldIn.isRemote) return super.onItemUse(player, worldIn, pos, hand, facing, hitX, hitY, hitZ);
+		SpellSpace space = getSpellSpace(player.getHeldItem(hand));
+		if (space != null) {
+			if (!space.isFullyLoaded()) {
+				space.forceLoad(false);
+			}
+			if (player.isSneaking()) {
+				space.start(player, new HashMap<>());
+			} else {
 				space.start(new ServerPos(pos, worldIn), new HashMap<>());
 			}
 		}
@@ -129,7 +154,7 @@ public class ItemPearl extends ItemBase {
 				tooltip.add(Translate.translate("pearl.broken", TextFormatting.RED, pos));
 			} else {
 				long id = stack.getOrCreateSubCompound(LINKED_DATA_TAG).getLong("SpellSpace");
-				tooltip.add(Translate.translate("pearl.withspellspace", id == -1 ? Translate.translate("null", TextFormatting.RED) : id));
+				tooltip.add(Translate.translate("pearl.withspellspace", id == -1 ? (Translate.translate("null", TextFormatting.RED)) : (id), pos));
 			}
 		}
 		

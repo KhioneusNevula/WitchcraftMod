@@ -236,16 +236,18 @@ public class DrawEffects {
 		    Minecraft.getMinecraft().getTextureManager().bindTexture(new ResourceLocation(Goeturgy.MODID + ":textures/" + tex));
 		    
 		    IBlockState state = world.getBlockState(pos);
-		    
-		    //GlStateManager.pushMatrix();
-		    //GlStateManager.translate(pos.getX() - offsetX, pos.getY() - offsetY, pos.getZ() - offsetZ);
-		   // GlStateManager.enableTexture2D();;
+		    /*
+		    GlStateManager.pushMatrix();
+		    GlStateManager.translate(pos.getX() - offsetX, pos.getY() - offsetY, pos.getZ() - offsetZ);
+		    GlStateManager.enableTexture2D();
 
-		   //GlStateManager.enableBlend();
-		    //GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA,
-		     //GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
-		    //GlStateManager.color(red, green, blue, 0.7f);
-		    //GlStateManager.disableDepth();
+		    GlStateManager.enableBlend();
+		    GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA,
+		    GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+		    GlStateManager.color(red, green, blue, 0.7f);
+		    GlStateManager.disableDepth();
+		    
+		    */
 		    AxisAlignedBB box = (!state.getBlock().isAir(state, world, pos) ? state.getBlock().getBoundingBox(state, world, pos).grow(0, -0.5, 0).offset(0, -0.15, 0) : Block.FULL_BLOCK_AABB.grow(0, -0.5, 0).offset(0, -0.15, 0));
 		    Tessellator tessellator = Tessellator.getInstance();
 		    BufferBuilder buffer = tessellator.getBuffer();
@@ -295,8 +297,8 @@ public class DrawEffects {
 		    r.pos(box.minX, box.maxY, box.maxZ).endVertex();
 		    tess.draw();
 
-		    
-		    GlStateManager.enableDepth();
+		    */
+		    /*GlStateManager.enableDepth();
 		    GlStateManager.disableBlend();
 		    GlStateManager.enableTexture2D();
 		    GlStateManager.popMatrix();*/

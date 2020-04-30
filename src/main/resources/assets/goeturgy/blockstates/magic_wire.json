@@ -1,5 +1,10 @@
 {
     "variants": {
-        "normal": { "model": "goeturgy:magic_wire" }
+        "side_placed=north": { "model": "goeturgy:magic_wire" },
+        "side_placed=south": { "model": "goeturgy:magic_wire" },
+        "side_placed=east": { "model": "goeturgy:magic_wire" },
+        "side_placed=west": { "model": "goeturgy:magic_wire" },
+        "side_placed=up": { "model": "goeturgy:magic_wire" },
+        "side_placed=down": { "model": "goeturgy:magic_wire" }
     }
 }

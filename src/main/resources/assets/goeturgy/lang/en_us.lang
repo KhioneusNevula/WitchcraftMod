@@ -11,7 +11,10 @@ abacus.value=Number: %s
 #Pearl
 pearl.unbound=No binding
 pearl.broken=%1$sBlock at position %2$s is broken
-pearl.withspellspace=Linked to spellspace: %s
+pearl.withspellspace=Linked to spellspace: %1$s at position %2$s
+
+#Waystone
+waystone.bound=%1$s at %2$s
 
 #Misc
 null=%sNone

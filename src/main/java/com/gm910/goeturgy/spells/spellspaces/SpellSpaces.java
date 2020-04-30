@@ -2,10 +2,10 @@ package com.gm910.goeturgy.spells.spellspaces;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
 import com.gm910.goeturgy.Goeturgy;
 import com.gm910.goeturgy.spells.events.space.CreateSpellSpaceEvent;
@@ -14,12 +14,12 @@ import com.gm910.goeturgy.spells.util.ISpellObject;
 import com.gm910.goeturgy.util.NonNullMap;
 import com.gm910.goeturgy.util.ServerPos;
 
+import net.minecraft.crash.CrashReport;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
-import net.minecraft.util.EnumParticleTypes;
+import net.minecraft.util.ReportedException;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.minecraft.world.storage.MapStorage;
 import net.minecraft.world.storage.WorldSavedData;
@@ -101,7 +101,7 @@ public class SpellSpaces extends WorldSavedData implements Collection<SpellSpace
 		
 		spellSpacesByWorld.get(sp.getDimension()).remove(sp);
 		sp.id = -1;
-		sp.clientTick(new RenderWorldLastEvent(null, 0.1685f));
+		SpellSpace.clientTick(new RenderWorldLastEvent(null, 0.1685f));
 		MinecraftForge.EVENT_BUS.unregister(sp);
 		System.out.println("Removed spellspace " + id);
 		markDirty();
@@ -120,6 +120,15 @@ public class SpellSpaces extends WorldSavedData implements Collection<SpellSpace
 		
 		for (SpellSpace sp : spellSpacesByWorld.get(position.d)) {
 			if (sp.getInnerSpace().contains(position)) {
+				return sp;
+			}
+		}
+		return null;
+	}
+	
+	public SpellSpace getByHeadPos(ServerPos headPos) {
+		for (SpellSpace sp : spellSpacesByWorld.get(headPos.d)) {
+			if (sp.getHeadPos() != null && sp.getHeadPos().equals(headPos)) {
 				return sp;
 			}
 		}
@@ -166,7 +175,7 @@ public class SpellSpaces extends WorldSavedData implements Collection<SpellSpace
 		}
 	}
 	
-	public static SpellSpaces get(World world) {
+	private static SpellSpaces get(World world) {
 		  
 		  MapStorage storage = world.getMapStorage();
 		  SpellSpaces instance = (SpellSpaces) storage.getOrLoadData(SpellSpaces.class, NAME);
@@ -180,8 +189,7 @@ public class SpellSpaces extends WorldSavedData implements Collection<SpellSpace
 	
 	public static SpellSpaces get() {
 		if (Goeturgy.proxy.getServer() == null) {
-			System.out.println("On client side???");
-			return null;
+			throw new ReportedException(CrashReport.makeCrashReport(new IllegalAccessException("No SpellSpace registry is accessible because no server exists"), "Someone tried to access the spellspace registry without a server"));
 		}
 		return get(FMLCommonHandler.instance().getMinecraftServerInstance().getWorld(0));
 	}
@@ -198,10 +206,12 @@ public class SpellSpaces extends WorldSavedData implements Collection<SpellSpace
 		for (NBTBase base : nbt.getTagList("SpellSpaceList", NBT.TAG_COMPOUND)) {
 			NBTTagCompound comp = (NBTTagCompound)base;
 			int dim = comp.getInteger("Dimension");
+			System.out.println("Deserializing spellspaces for dimension " + dim);
 			List<SpellSpace> list = new ArrayList<>();
-			for (NBTBase base2 : nbt.getTagList("SpellSpaces", NBT.TAG_COMPOUND)) {
+			for (NBTBase base2 : comp.getTagList("SpellSpaces", NBT.TAG_COMPOUND)) {
 				SpellSpace s = new SpellSpace(dim);
 				s.deserializeNBT((NBTTagCompound) base2);
+				System.out.println("Deserializing SpellSpace with id " + s.getID());
 				//list.add(s);
 				list.add(s);
 			}
@@ -216,13 +226,22 @@ public class SpellSpaces extends WorldSavedData implements Collection<SpellSpace
 		compound.setLong("LastID", currentID);
 		compound.setInteger("Power", this.power);
 		NBTTagList ls = new NBTTagList();
+		this.spellSpacesByWorld.forEach((i, l) -> {
+			l.removeAll(Collections.singleton(null));
+		});
 		for (int dim : this.spellSpacesByWorld.keySet()) {
 			NBTTagCompound cmp = new NBTTagCompound();
 			cmp.setInteger("Dimension", dim);
 			NBTTagList sps = new NBTTagList();
-			
+
+			System.out.println("Serializing spellspaces for dimension " + dim);
 			for (SpellSpace m : this.spellSpacesByWorld.get(dim)) {
+				if (m.getID() == -1) {
+					continue;
+				}
 				sps.appendTag(m.serializeNBT());
+
+				System.out.println("Serializing SpellSpace with id " + m.getID() + " at " + m.headPos);
 			}
 			cmp.setTag("SpellSpaces", sps);
 			ls.appendTag(cmp);

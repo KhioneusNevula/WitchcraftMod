@@ -1,7 +1,7 @@
 package com.gm910.goeturgy.spells.events.space;
 
 import com.gm910.goeturgy.spells.spellspaces.SpellSpace;
-import com.gm910.goeturgy.spells.spellspaces.SpellSpace.SpellInstance;
+import com.gm910.goeturgy.spells.spellspaces.SpellSpace.Spell;
 
 import net.minecraftforge.fml.common.eventhandler.Event;
 
@@ -19,15 +19,15 @@ public class SpellSpaceEvent extends Event {
 	
 	public static class SpellSpaceRunEvent extends SpellSpaceEvent {
 
-		protected SpellInstance runner;
+		protected Spell runner;
 		
-		public SpellSpaceRunEvent(SpellInstance runner) {
+		public SpellSpaceRunEvent(Spell runner) {
 			super(runner.getSpellSpace());
 			this.runner = runner;
 			// TODO Auto-generated constructor stub
 		}
 		
-		public SpellInstance getRunner() {
+		public Spell getRunner() {
 			return runner;
 		}
 		

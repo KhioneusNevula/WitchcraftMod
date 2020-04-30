@@ -3,7 +3,7 @@ package com.gm910.goeturgy.spells.util;
 import java.util.List;
 
 import com.gm910.goeturgy.spells.spellspaces.SpellSpace;
-import com.gm910.goeturgy.spells.spellspaces.SpellSpace.SpellInstance;
+import com.gm910.goeturgy.spells.spellspaces.SpellSpace.Spell;
 import com.gm910.goeturgy.util.NonNullMap;
 import com.gm910.goeturgy.util.ServerPos;
 
@@ -44,19 +44,19 @@ public interface ISpellComponent extends ISpellObject {
 	 * @param input
 	 * @return
 	 */
-	public NonNullMap<EnumFacing, NBTTagCompound> activate(SpellInstance runner, ServerPos modifiedPos, NonNullMap<EnumFacing, NBTTagCompound> inputs);
+	public NonNullMap<EnumFacing, NBTTagCompound> activate(Spell spell, ServerPos modifiedPos, NonNullMap<EnumFacing, NBTTagCompound> inputs);
 	
 	/**
 	 * Activate this and return its output, inputs are assumed to have been statically inserted (use for starter components)
 	 * ##DO NOT OVERRIDE
 	 * if input is incorrect return null
 	 */
-	public default NonNullMap<EnumFacing, NBTTagCompound> activate(SpellInstance runner, ServerPos modifiedPos) {
-		return activate(runner, modifiedPos, this.getInputs());
+	public default NonNullMap<EnumFacing, NBTTagCompound> activate(Spell spell, ServerPos modifiedPos) {
+		return activate(spell, modifiedPos, this.getInputs());
 	}
 	
-	public default NonNullMap<EnumFacing, NBTTagCompound> activate(SpellInstance runner, Entity modifiedEntity, NonNullMap<EnumFacing, NBTTagCompound> inputs) {
-		return activate(runner, new ServerPos(modifiedEntity), inputs);
+	public default NonNullMap<EnumFacing, NBTTagCompound> activate(Spell spell, Entity modifiedEntity, NonNullMap<EnumFacing, NBTTagCompound> inputs) {
+		return activate(spell, new ServerPos(modifiedEntity), inputs);
 	}
 	
 	/**
@@ -116,6 +116,23 @@ public interface ISpellComponent extends ISpellObject {
 	 * @return
 	 */
 	public default boolean isStarter() {
+		return false;
+	}
+	
+	/**
+	 * Whether this component accepts an empty NBTTagCompound through this face
+	 * @return
+	 */
+	public default boolean acceptsEmpty(EnumFacing face) {
+		return false;
+	}
+	
+	/**
+	 * Whether this face is an output
+	 * @param face
+	 * @return
+	 */
+	public default boolean isOutput(EnumFacing face) {
 		return false;
 	}
 	

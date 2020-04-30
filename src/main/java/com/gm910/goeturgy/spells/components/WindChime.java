@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.gm910.goeturgy.spells.ioflow.MagicIO;
-import com.gm910.goeturgy.spells.spellspaces.SpellSpace.SpellInstance;
+import com.gm910.goeturgy.spells.spellspaces.SpellSpace.Spell;
 import com.gm910.goeturgy.spells.util.ISpellComponent;
 import com.gm910.goeturgy.tileentities.TileEntityBaseTickable;
 import com.gm910.goeturgy.util.NonNullMap;
@@ -50,7 +50,7 @@ public class WindChime extends TileEntityBaseTickable implements ISpellComponent
 	}
 	
 	@Override
-	public NonNullMap<EnumFacing, NBTTagCompound> activate(SpellInstance sp, ServerPos modifiedPos, NonNullMap<EnumFacing, NBTTagCompound> inputs) {
+	public NonNullMap<EnumFacing, NBTTagCompound> activate(Spell sp, ServerPos modifiedPos, NonNullMap<EnumFacing, NBTTagCompound> inputs) {
 		NonNullMap<EnumFacing, NBTTagCompound> outputs = new NonNullMap<>(NBTTagCompound::new);
 		
 		int radius = getRadiusFrom(inputs);

@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.gm910.goeturgy.spells.ioflow.MagicIO;
-import com.gm910.goeturgy.spells.spellspaces.SpellSpace.SpellInstance;
+import com.gm910.goeturgy.spells.spellspaces.SpellSpace.Spell;
 import com.gm910.goeturgy.spells.util.ISpellChainListener;
 import com.gm910.goeturgy.spells.util.ISpellComponent;
 import com.gm910.goeturgy.tileentities.TileEntityBaseTickable;
@@ -68,7 +68,7 @@ public class Pulser extends TileEntityBaseTickable implements ISpellComponent, I
 	}
 	
 	@Override
-	public NonNullMap<EnumFacing, NBTTagCompound> activate(SpellInstance sp, ServerPos modifiedPos, NonNullMap<EnumFacing, NBTTagCompound> inputs) {
+	public NonNullMap<EnumFacing, NBTTagCompound> activate(Spell sp, ServerPos modifiedPos, NonNullMap<EnumFacing, NBTTagCompound> inputs) {
 		NonNullMap<EnumFacing, NBTTagCompound> outputs = new NonNullMap<>(NBTTagCompound::new);
 		System.out.println("Pulser at index " + index);
 		if (index == -1) {
@@ -182,12 +182,12 @@ public class Pulser extends TileEntityBaseTickable implements ISpellComponent, I
 	}
 
 	@Override
-	public void activated(SpellInstance space, BlockPos pos) {
+	public void activated(Spell space, BlockPos pos) {
 		
 	}
 
 	@Override
-	public void finished(SpellInstance space, BlockPos pos, boolean success) {
+	public void finished(Spell space, BlockPos pos, boolean success) {
 		System.out.println("Pulser listener finished at " + pos + "? " + success);
 		if (success && waitingToActivate) {
 			System.out.println("pulser Listener finished and marked spellspace");
@@ -199,12 +199,12 @@ public class Pulser extends TileEntityBaseTickable implements ISpellComponent, I
 	}
 
 	@Override
-	public void addToChain(SpellInstance space, BlockPos pos) {
+	public void addToChain(Spell space, BlockPos pos) {
 		this.listening.add(pos);
 	}
 
 	@Override
-	public boolean isPartOfChain(SpellInstance space, BlockPos pos) {
+	public boolean isPartOfChain(Spell space, BlockPos pos) {
 		
 		return listening.contains(pos);
 	}

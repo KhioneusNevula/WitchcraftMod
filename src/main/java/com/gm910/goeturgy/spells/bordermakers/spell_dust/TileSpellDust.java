@@ -1,6 +1,7 @@
 package com.gm910.goeturgy.spells.bordermakers.spell_dust;
 
-import com.gm910.goeturgy.blocks.BlockSpellDust;
+import java.util.Random;
+
 import com.gm910.goeturgy.spells.spellspaces.ClientSpellSpace;
 import com.gm910.goeturgy.spells.spellspaces.SpellSpace;
 import com.gm910.goeturgy.spells.spellspaces.SpellSpaces;
@@ -25,13 +26,14 @@ public class TileSpellDust extends TileEntityBaseTickable implements ISpellBorde
 	@Override
 	public NBTTagCompound getUpdateTag() {
 		NBTTagCompound update = super.getUpdateTag();
+		
 		//update.setTag("Spsp", GMNBT.makeList(SpellSpace.runClients, (e) -> new NBTTagString(Messages.serialize((IRunnableTask & Serializable)e))));
 		if (getSpellSpace() != null) {
 			update.setTag("SpellSpace", this.getSpellSpace().serializeNBT());
 		} else {
 			System.out.println("No spellspace");
 		}
-		System.out.println("Sendin' updates yo");
+		//System.out.println("Sendin' updates yo");
 		return update;
 	}
 	
@@ -146,7 +148,9 @@ public class TileSpellDust extends TileEntityBaseTickable implements ISpellBorde
 		}
 		
 		
-		super.update();
+		if ((new Random()).nextInt(1000) < 1) {
+			//TODO is this necessary?: super.update();
+		}
 	}
 
 	@Override

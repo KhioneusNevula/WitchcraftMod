@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.gm910.goeturgy.spells.ioflow.MagicIO;
-import com.gm910.goeturgy.spells.spellspaces.SpellSpace.SpellInstance;
+import com.gm910.goeturgy.spells.spellspaces.SpellSpace.Spell;
 import com.gm910.goeturgy.spells.util.ISpellComponent;
 import com.gm910.goeturgy.tileentities.TileEntityBaseTickable;
 import com.gm910.goeturgy.util.IObjectMouseoverGui;
@@ -24,6 +24,11 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraftforge.client.event.RenderGameOverlayEvent.Pre;
 
+/**
+ * An abacus holds and outputs a numeric value statically
+ * @author borah
+ *
+ */
 public class Abacus extends TileEntityBaseTickable implements ISpellComponent, IObjectMouseoverGui {
 
 	private int value = 0;
@@ -79,6 +84,12 @@ public class Abacus extends TileEntityBaseTickable implements ISpellComponent, I
 	}
 	
 	@Override
+		public boolean isOutput(EnumFacing face) {
+			// TODO Auto-generated method stub
+			return true;
+		}
+	
+	@Override
 	public NonNullMap<EnumFacing, NBTTagCompound> getStaticOutput(ServerPos modifiedPos) {
 		NonNullMap<EnumFacing, NBTTagCompound> so = new NonNullMap<>( () ->  {
 			NBTTagCompound cmp = new NBTTagCompound();
@@ -103,7 +114,7 @@ public class Abacus extends TileEntityBaseTickable implements ISpellComponent, I
 
 
 	@Override
-	public NonNullMap<EnumFacing, NBTTagCompound> activate(SpellInstance sp, ServerPos modifiedPos, NonNullMap<EnumFacing, NBTTagCompound> map) {
+	public NonNullMap<EnumFacing, NBTTagCompound> activate(Spell sp, ServerPos modifiedPos, NonNullMap<EnumFacing, NBTTagCompound> map) {
 		System.out.println("Abacus should not be activated, it is static");
 		return new NonNullMap<>(NBTTagCompound::new);
 	}

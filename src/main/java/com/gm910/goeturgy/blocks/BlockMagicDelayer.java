@@ -1,7 +1,7 @@
 package com.gm910.goeturgy.blocks;
 
-import com.gm910.goeturgy.init.BlockInit;
-import com.gm910.goeturgy.spells.components.MagicWire;
+import com.gm910.goeturgy.spells.components.MagicDelayer;
+import com.gm910.goeturgy.spells.components.MagicWire.SideState;
 import com.gm910.goeturgy.spells.util.ISpellComponent;
 
 import net.minecraft.block.material.Material;
@@ -12,20 +12,19 @@ import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumHand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
-public class BlockMagicWire extends BlockBase {
+public class BlockMagicDelayer extends BlockBase {
 	
 	public static final PropertyDirection SIDE_PLACED = PropertyDirection.create("side_placed");
 
-	public BlockMagicWire(String name) {
+	public BlockMagicDelayer(String name) {
 		super(name, Material.ANVIL, true, null, CreativeTabs.MISC);
-		this.setTileEntity("magic_wire", MagicWire.class);
+		this.setTileEntity("magic_delayer", MagicDelayer.class);
 		this.setDefaultState(this.blockState.getBaseState().withProperty(SIDE_PLACED, EnumFacing.DOWN));
 	}
 	
@@ -38,11 +37,20 @@ public class BlockMagicWire extends BlockBase {
 	@Override
 	public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn,
 			EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ) {
-		MagicWire wire = (MagicWire)worldIn.getTileEntity(pos);
+		MagicDelayer wire = (MagicDelayer)worldIn.getTileEntity(pos);
 		if (!playerIn.isSneaking()) {
-			wire.toggleAsOutput(facing);
+			if (wire.getStateForSide(facing) == SideState.NONE) {
+				wire.setStateForSide(facing, SideState.OUTPUT);
+			} else if (wire.getStateForSide(facing) == SideState.OUTPUT) {
+				wire.setStateForSide(facing, SideState.INPUT);
+			} else {
+				wire.setStateForSide(facing, SideState.NONE);
+			}
 		} else {
-			wire.toggleAsInput(facing);
+			
+			wire.setDelay(wire.getDelay() + 1);
+
+			System.out.println("Delayer value " + wire.getDelay());
 		}
 		return true;
 	}
@@ -73,24 +81,10 @@ public class BlockMagicWire extends BlockBase {
 	@Override
 	public void onBlockPlacedBy(World worldIn, BlockPos pos, IBlockState state, EntityLivingBase placer,
 			ItemStack stack) {
-		MagicWire wire = (MagicWire) worldIn.getTileEntity(pos);
+		MagicDelayer wire = (MagicDelayer) worldIn.getTileEntity(pos);
 		wire.resetInputSide();
 		wire.makeInput(state.getValue(SIDE_PLACED));
 	}
 	
-	public static class MagicWireItemBlock extends ItemBlock {
-
-		public MagicWireItemBlock() {
-			super(BlockInit.MAGIC_WIRE);
-		}
-		
-		@Override
-		public boolean placeBlockAt(ItemStack stack, EntityPlayer player, World world, BlockPos pos, EnumFacing side,
-				float hitX, float hitY, float hitZ, IBlockState newState) {
-			
-			return super.placeBlockAt(stack, player, world, pos, side, hitX, hitY, hitZ, newState);
-		}
-		
-	}
 
 }

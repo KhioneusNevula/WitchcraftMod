@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.gm910.goeturgy.Goeturgy;
+import com.gm910.goeturgy.spells.components.ChaliceThreshhold;
+import com.gm910.goeturgy.spells.components.MagicDelayer;
 import com.gm910.goeturgy.spells.components.MagicWire;
 
 import net.minecraft.tileentity.TileEntity;
@@ -31,5 +33,9 @@ public class TileInit {
 	
 	public static void registerSpecialRenderers() {
 		ClientRegistry.bindTileEntitySpecialRenderer(MagicWire.class, new MagicWire.WireRenderer());
+
+		ClientRegistry.bindTileEntitySpecialRenderer(MagicDelayer.class, new MagicDelayer.DelayerRenderer());
+		
+		ClientRegistry.bindTileEntitySpecialRenderer(ChaliceThreshhold.class, new ChaliceThreshhold.ThreshRenderer());
 	}
 }

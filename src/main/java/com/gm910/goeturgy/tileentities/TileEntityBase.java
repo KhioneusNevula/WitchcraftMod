@@ -6,9 +6,12 @@ import com.gm910.goeturgy.spells.spellspaces.SpellSpaces;
 import com.gm910.goeturgy.util.NonNullMap;
 
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.network.NetworkManager;
+import net.minecraft.network.play.server.SPacketUpdateTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
 import net.minecraftforge.common.util.Constants.NBT;
+import net.minecraftforge.fml.common.registry.GameRegistry;
 
 /**
  * Includes useful input and output list for spellspace magics and stuff
@@ -41,6 +44,18 @@ public abstract class TileEntityBase extends TileEntity {
 	public NBTTagCompound getUpdateTag() {
 		// TODO Auto-generated method stub
 		return this.writeToNBT(new NBTTagCompound());
+	}
+	
+	@Override
+	public SPacketUpdateTileEntity getUpdatePacket() {
+		return new SPacketUpdateTileEntity(pos, 0, this.getUpdateTag());
+	}
+	
+	@Override
+	public void onDataPacket(NetworkManager net, SPacketUpdateTileEntity pkt) {
+		
+		super.onDataPacket(net, pkt);
+		this.handleUpdateTag(pkt.getNbtCompound());
 	}
 	
 	@Override

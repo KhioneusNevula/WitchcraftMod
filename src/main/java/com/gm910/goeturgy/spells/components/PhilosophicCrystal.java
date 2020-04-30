@@ -5,7 +5,7 @@ import java.util.List;
 
 import com.gm910.goeturgy.spells.ioflow.BlockStack;
 import com.gm910.goeturgy.spells.ioflow.MagicIO;
-import com.gm910.goeturgy.spells.spellspaces.SpellSpace.SpellInstance;
+import com.gm910.goeturgy.spells.spellspaces.SpellSpace.Spell;
 import com.gm910.goeturgy.spells.spellspaces.SpellSpaces;
 import com.gm910.goeturgy.spells.util.ISpellComponent;
 import com.gm910.goeturgy.tileentities.TileEntityBaseTickable;
@@ -50,7 +50,7 @@ public class PhilosophicCrystal extends TileEntityBaseTickable implements ISpell
 
 
 	@Override
-	public NonNullMap<EnumFacing, NBTTagCompound> activate(SpellInstance sp, ServerPos modPos, NonNullMap<EnumFacing, NBTTagCompound> inps) {
+	public NonNullMap<EnumFacing, NBTTagCompound> activate(Spell sp, ServerPos modPos, NonNullMap<EnumFacing, NBTTagCompound> inps) {
 		NonNullMap<EnumFacing, NBTTagCompound> out = new NonNullMap<>(NBTTagCompound::new);
 		List<ServerPos> ls = new ArrayList<>();
 		BlockStack block = null;

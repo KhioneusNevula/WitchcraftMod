@@ -3,7 +3,7 @@ package com.gm910.goeturgy.spells.components;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.gm910.goeturgy.spells.spellspaces.SpellSpace.SpellInstance;
+import com.gm910.goeturgy.spells.spellspaces.SpellSpace.Spell;
 import com.gm910.goeturgy.spells.util.ISpellComponent;
 import com.gm910.goeturgy.tileentities.TileEntityBaseTickable;
 import com.gm910.goeturgy.util.NonNullMap;
@@ -12,6 +12,11 @@ import com.gm910.goeturgy.util.ServerPos;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumFacing;
 
+/**
+ * A pearl block initiates the execution of a spell and is a basic starter component. Can be linked to a pearl item to execute the spell where the pearl is used
+ * @author borah
+ *
+ */
 public class InitiatorPearlBlock extends TileEntityBaseTickable implements ISpellComponent {
 
 	@Override
@@ -25,6 +30,12 @@ public class InitiatorPearlBlock extends TileEntityBaseTickable implements ISpel
 	public boolean accepts(EnumFacing facing, NBTTagCompound comp) {
 		// TODO Auto-generated method stub
 		return false;
+	}
+	
+	@Override
+	public boolean isOutput(EnumFacing face) {
+		// TODO Auto-generated method stub
+		return true;
 	}
 
 	@Override
@@ -41,7 +52,7 @@ public class InitiatorPearlBlock extends TileEntityBaseTickable implements ISpel
 
 
 	@Override
-	public NonNullMap<EnumFacing, NBTTagCompound> activate(SpellInstance sp, ServerPos modifiedPos, NonNullMap<EnumFacing, NBTTagCompound> map) {
+	public NonNullMap<EnumFacing, NBTTagCompound> activate(Spell sp, ServerPos modifiedPos, NonNullMap<EnumFacing, NBTTagCompound> map) {
 		System.out.println("Pearl block activated");
 		return new NonNullMap<>(NBTTagCompound::new);
 	}

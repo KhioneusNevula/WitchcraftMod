@@ -9,20 +9,19 @@ import com.gm910.goeturgy.spells.util.ISpellComponent;
 import com.gm910.goeturgy.tileentities.TileEntityBaseTickable;
 import com.gm910.goeturgy.util.NonNullMap;
 import com.gm910.goeturgy.util.ServerPos;
+import com.gm910.goeturgy.world.util.Teleport;
 
-import net.minecraft.entity.effect.EntityLightningBolt;
+import net.minecraft.entity.Entity;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumFacing;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
-import net.minecraftforge.common.DimensionManager;
+import net.minecraft.util.math.Vec3d;
 
 /**
  * Summons lightning at its position or the positions in the list or singular pos given to it
  * @author borah
  *
  */
-public class LightningSummoner extends TileEntityBaseTickable implements ISpellComponent {
+public class EnderPearlBlock extends TileEntityBaseTickable implements ISpellComponent {
 
 	
 	@Override
@@ -34,25 +33,13 @@ public class LightningSummoner extends TileEntityBaseTickable implements ISpellC
 	@Override
 	public boolean accepts(EnumFacing facing, NBTTagCompound comp) {
 		
-		return comp.hasNoTags() || comp.hasKey(MagicIO.POS) || comp.hasKey(MagicIO.toList(MagicIO.POS));
+		return comp.hasKey(MagicIO.ENTITY) || comp.hasKey(MagicIO.toList(MagicIO.ENTITY)) || comp.hasKey(MagicIO.POS) && !MagicIO.has(MagicIO.POS, inputs);
 	}
 
 	@Override
 	public NonNullMap<EnumFacing, NBTTagCompound> getInputs() {
 		// TODO Auto-generated method stub
 		return inputs;
-	}
-	
-	@Override
-	public boolean acceptsEmpty(EnumFacing face) {
-		// TODO Auto-generated method stub
-		return true;
-	}
-	
-	@Override
-	public boolean isOutput(EnumFacing face) {
-		// TODO Auto-generated method stub
-		return false;
 	}
 
 	@Override
@@ -61,30 +48,56 @@ public class LightningSummoner extends TileEntityBaseTickable implements ISpellC
 		return true;
 	}
 
-
 	@Override
-	public NonNullMap<EnumFacing, NBTTagCompound> activate(Spell sp, ServerPos modifiedPos, NonNullMap<EnumFacing, NBTTagCompound> inps) {
-		List<ServerPos> ls = new ArrayList<>();
+	public NonNullMap<EnumFacing, NBTTagCompound> activate(Spell runner, Entity modifiedEntity,
+			NonNullMap<EnumFacing, NBTTagCompound> inputs) {
+		return privateActivate(runner, null, modifiedEntity, inputs);
+	}
+	
+
+	private NonNullMap<EnumFacing, NBTTagCompound> privateActivate(Spell sp, ServerPos modifiedPos, Entity modifiedEntity, NonNullMap<EnumFacing, NBTTagCompound> inps) {
+		List<Entity> ls = new ArrayList<>();
 		for (EnumFacing f : EnumFacing.VALUES) {
-			if (MagicIO.getPosList(inps.get(f)) != null) {
-				ls.addAll(MagicIO.getPosList(inps.get(f)));
+			if (MagicIO.getPhysicalEntityList(inps.get(f)) != null) {
+				ls.addAll(MagicIO.getPhysicalEntityList(inps.get(f)));
 			}
-			if (MagicIO.getPos(inps.get(f)) != null) {
-				ls.add(MagicIO.getPos(inps.get(f)));
+			if (MagicIO.getPhysicalEntity(inps.get(f)) != null) {
+				ls.add(MagicIO.getPhysicalEntity(inps.get(f)));
 			}
 		}
 		if (ls.isEmpty()) {
-			ls.add(modifiedPos);
+			if (modifiedEntity != null) {
+				ls.add(modifiedEntity);
+			}
+			else {
+				return null;
+			}
 		}
-		for (ServerPos spos : ls) {
-			BlockPos pos = spos.getPos();
-			World world = DimensionManager.getWorld(spos.d);
-			if (world != null) {
-				System.out.println("Lightning at " + pos);
-				world.addWeatherEffect(new EntityLightningBolt(world, pos.getX(), pos.getY(), pos.getZ(), pos.equals(this.pos) ? true : false));
+		
+		ServerPos toPos = null; 
+		
+		for (EnumFacing f : inps.keySet()) {
+			toPos = MagicIO.getPos(inps.get(f)) != null ? MagicIO.getPos(inps.get(f)) : toPos;
+		}
+		
+		for (Entity en : ls) {
+			if (toPos == null) {
+				System.out.println("Teleporting entity forward");
+				if (en == null) continue;
+				if (en.getPositionVector() == null) continue;
+				if (en.getLookVec() == null) continue;
+				Vec3d ottopos = en.getPositionVector().add(en.getLookVec());
+				en.setPositionAndUpdate(ottopos.x, ottopos.y + 0.5, ottopos.z);
+			} else {
+				Teleport.teleportToDimension(en, toPos);
 			}
 		}
 		return new NonNullMap<EnumFacing, NBTTagCompound>(NBTTagCompound::new);
+	}
+	
+	@Override
+	public NonNullMap<EnumFacing, NBTTagCompound> activate(Spell sp, ServerPos modifiedPos, NonNullMap<EnumFacing, NBTTagCompound> inps) {
+		return privateActivate(sp, modifiedPos, null, inps);
 	}
 
 	@Override
@@ -95,7 +108,7 @@ public class LightningSummoner extends TileEntityBaseTickable implements ISpellC
 	@Override
 	public int getRequiredPower(NonNullMap<EnumFacing, List<String>> tagsForSide) {
 		
-		return 20;
+		return 50;
 	}
 
 	@Override
@@ -112,13 +125,13 @@ public class LightningSummoner extends TileEntityBaseTickable implements ISpellC
 			}
 		}
 		
-		return 20 * ls.size();
+		return 50 * ls.size();
 	}
 
 	@Override
 	public int getRequiredPower() {
 		// TODO Auto-generated method stub
-		return 20;
+		return 50;
 	}
 
 	

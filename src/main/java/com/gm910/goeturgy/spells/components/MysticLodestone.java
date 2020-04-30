@@ -3,7 +3,7 @@ package com.gm910.goeturgy.spells.components;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.gm910.goeturgy.spells.ioflow.BlockStack;
+import com.gm910.goeturgy.items.ItemWaystone;
 import com.gm910.goeturgy.spells.ioflow.MagicIO;
 import com.gm910.goeturgy.spells.spellspaces.SpellSpace.Spell;
 import com.gm910.goeturgy.spells.util.ISpellComponent;
@@ -25,8 +25,9 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraftforge.client.event.RenderGameOverlayEvent.Pre;
 
-public class Pedestal extends TileEntityBaseTickable implements ISpellComponent, IObjectMouseoverGui {
+public class MysticLodestone extends TileEntityBaseTickable implements ISpellComponent, IObjectMouseoverGui {
 
+	private ItemStack waystone = ItemStack.EMPTY;
 	
 	@Override
 	public void update() {
@@ -37,56 +38,19 @@ public class Pedestal extends TileEntityBaseTickable implements ISpellComponent,
 	}
 	
 	
-	public BlockStack getBlock(ServerPos modifiedPos) {
-		BlockStack stack = null;
-		ServerPos sigPos = null;
-		//if (modifiedPos.equals(pos)) {
-			sigPos = getServerPos().sUp();
-		//} else {
-		//	sigPos = modifiedPos;
-		//}
+	public ServerPos getPosition(ItemStack waystone) {
 		
-		/*for (EnumFacing f : EnumFacing.VALUES) {
-			if (!MagicIO.getItemStack(inputs.get(f)).isEmpty()) {
-				if (MagicIO.getItemStack(inputs.get(f)).getItem() instanceof ItemBlock) {
-					ItemStack itemplacer = MagicIO.getItemStack(inputs.get(f));
-					ItemBlock itemblock = ((ItemBlock)itemplacer.getItem());
-					IBlockState state = itemblock.getBlock().getStateFromMeta(itemplacer.getItem().getMetadata(itemplacer.getMetadata()));
-					
-					NBTTagCompound tiledata = itemplacer.getSubCompound("BlockEntityTag");
-					TileEntity tile = itemblock.getBlock().createTileEntity(getModifiedWorld(), state);
-					if (tile != null) {
-						NBTTagCompound nbttagcompound1 = tile.writeToNBT(new NBTTagCompound());
-	                    NBTTagCompound nbttagcompound2 = nbttagcompound1.copy();
-	                    nbttagcompound1.merge(tiledata);
-	
-	                    if (!nbttagcompound1.equals(nbttagcompound2))
-	                    {
-	                        tile.readFromNBT(nbttagcompound1);
-	                    }
-					}
-                    stack = new BlockStack(state, tile);
-				}
-			}
-		}*/
-		
-		if (stack == null) {
-			stack = new BlockStack(sigPos);
-		}
-		
-		return stack;
+		return waystone.isEmpty() ? null : ItemWaystone.getLinkedBlock(waystone);
 	}
 	
 	@Override
 	public boolean accepts(EnumFacing facing, NBTTagCompound comp) {
 		ItemStack stack = MagicIO.getItemStack(comp);
-		/*if (!stack.isEmpty()) {
-			if (stack.getItem() != null) {
-				if (stack.getItem() instanceof ItemBlock) {
-					return true;
-				}
+		if (!stack.isEmpty()) {
+			if (stack.getItem() instanceof ItemWaystone && getPosition(stack) != null && !MagicIO.has(MagicIO.ITEM, inputs) && waystone.isEmpty()) {
+				return true;
 			}
-		} */
+		}
 		return false;
 	}
 
@@ -96,19 +60,22 @@ public class Pedestal extends TileEntityBaseTickable implements ISpellComponent,
 	}
 	
 	@Override
+	public boolean isOutput(EnumFacing face) {
+		// TODO Auto-generated method stub
+		return true;
+	}
+	
+	@Override
 	public NonNullMap<EnumFacing, NBTTagCompound> getStaticOutput(ServerPos modifiedPos) {
+		if (getPosition(waystone) == null) return null;
 		NonNullMap<EnumFacing, NBTTagCompound> so = new NonNullMap<>( () ->  {
 			NBTTagCompound cmp = new NBTTagCompound();
-			MagicIO.writeBlockToCompound(getBlock(modifiedPos), cmp);
+			MagicIO.writePosToCompound(this.getPosition(waystone), cmp);
 			return cmp;
 		});
 
 		so.generateValues(EnumFacing.VALUES);
-		System.out.print("Pedestal output ");
-		so.forEach((n, d) -> {
-			System.out.println(d);
-		});
-		System.out.println();
+		System.out.print("MysticLodestone output ");
 		return so;
 	}
 	
@@ -121,21 +88,51 @@ public class Pedestal extends TileEntityBaseTickable implements ISpellComponent,
 	@Override
 	public boolean putInput(NonNullMap<EnumFacing, NBTTagCompound> inputs) {
 		this.inputs = inputs;
+		
 		return true;
 	}
 
+	public ItemStack getWaystone(NonNullMap<EnumFacing, NBTTagCompound> map) {
+		for (EnumFacing face : map.keySet()) {
+			ItemStack stack = MagicIO.getItemStack(map.get(face));
+			if (!stack.isEmpty()) {
+				if (stack.getItem() instanceof ItemWaystone) {
+					return stack;
+				}
+			}
+		}
+		return waystone;
+	}
+	
+	public void setWaystone(ItemStack waystone) {
+		 this.waystone = waystone;
+		 sync();
+	}
+	
+	public ItemStack getItemStack() {
+		return waystone;
+	}
 
 	@Override
 	public NonNullMap<EnumFacing, NBTTagCompound> activate(Spell sp, ServerPos modifiedPos, NonNullMap<EnumFacing, NBTTagCompound> map) {
-		this.putInput(map);
-		return this.getStaticOutput(modifiedPos);
+		ItemStack stack = getWaystone(map);
+		if (stack.isEmpty()) {
+			return null;
+		}
+		NonNullMap<EnumFacing, NBTTagCompound> so = new NonNullMap<>( () ->  {
+			NBTTagCompound cmp = new NBTTagCompound();
+			MagicIO.writePosToCompound(this.getPosition(stack), cmp);
+			return cmp;
+		});
+		so.generateValues(EnumFacing.VALUES);
+		return so;
 	}
 
 	@Override
 	public NonNullMap<EnumFacing, List<String>> getPossibleReturns(NonNullMap<EnumFacing, List<String>> input) {
 		NonNullMap<EnumFacing, List<String>> so = new NonNullMap<>( () ->  {
 			List<String> cmp = new ArrayList<String>();
-			cmp.add(MagicIO.INT);
+			cmp.add(MagicIO.POS);
 			return cmp;
 		});
 		so.generateValues(EnumFacing.VALUES);
@@ -159,6 +156,18 @@ public class Pedestal extends TileEntityBaseTickable implements ISpellComponent,
 		// TODO Auto-generated method stub
 		return 0;
 	}
+	
+	@Override
+	public NBTTagCompound writeToNBT(NBTTagCompound compound) {
+		if (!waystone.isEmpty()) compound.setTag("Way", waystone.serializeNBT());
+		return super.writeToNBT(compound);
+	}
+	
+	@Override
+	public void readFromNBT(NBTTagCompound compound) {
+		waystone = compound.hasKey("Way") ? new ItemStack(compound.getCompoundTag("Way")) : waystone;
+		super.readFromNBT(compound);
+	}
 
 
 	@Override
@@ -170,7 +179,9 @@ public class Pedestal extends TileEntityBaseTickable implements ISpellComponent,
 		//DrawEffects.drawEntity(event.getPartialTicks(), e, 0.3f);
 		//e.setDead();
 		//world.spawnEntity(e);
+		gui.drawCenteredString(mc.fontRenderer, "" + this.getPosition(waystone), res.getScaledWidth()/ 2, res.getScaledHeight() / 2, 0xFFFFFF);
 	}
 	
-
+	
+	
 }

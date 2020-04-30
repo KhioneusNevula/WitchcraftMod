@@ -77,7 +77,11 @@ public abstract class MagicIO {
 			
 	
 	public static String toList(String name) {
-		return name + "List";
+		return name.indexOf("List") == -1 ? name + "List" : name;
+	}
+	
+	public static String notList(String listName) {
+		return listName.indexOf("List") != -1 ? listName.substring(0, listName.indexOf("List")) : listName;
 	}
 	
 	public static <T> T get(String k, NBTTagCompound cmp, Function<String, T> func) {
@@ -104,7 +108,7 @@ public abstract class MagicIO {
 	}
 	
 	public static <T extends Entity> T getPhysicalEntity(Class<T> clazz, NBTTagCompound cmp) {
-		
+		if (get(ENTITY, cmp, cmp::getUniqueId) == null) return null;
 		return entityfromid(clazz, get(ENTITY, cmp, cmp::getUniqueId));
 	}
 	
@@ -154,6 +158,7 @@ public abstract class MagicIO {
 	}
 	
 	public static Entity createEntityFromData(NBTTagCompound cmp) {
+		if (cmp == null) return null;
 		return EntityList.createEntityFromNBT(cmp, Goeturgy.proxy.getWorld(cmp.getInteger("Dimension")));
 	}
 	
@@ -202,6 +207,7 @@ public abstract class MagicIO {
 	
 	public static <T extends Entity> List<T> getPhysicalEntityList(NBTTagCompound cmp) {
 		List<T> ls = new ArrayList<>();
+		if (getEntityList(cmp) == null) return null;
 		for (UUID uu : getEntityList(cmp)) {
 			ls.add(MagicIO.<T>entityfromid(null, uu));
 		}
@@ -210,6 +216,8 @@ public abstract class MagicIO {
 	
 	public static List<Entity> getPhysicalEntityListFromEntityData(NBTTagCompound cmp) {
 		List<Entity> ls = new ArrayList<>();
+
+		if (getEntityDataList(cmp) == null) return null;
 		for (NBTTagCompound uu : getEntityDataList(cmp)) {
 			ls.add(createEntityFromData(uu));
 		}

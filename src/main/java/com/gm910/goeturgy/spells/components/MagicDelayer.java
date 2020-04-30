@@ -4,40 +4,44 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.gm910.goeturgy.spells.components.MagicWire.SideState;
+import com.gm910.goeturgy.spells.ioflow.SpellIOMap;
 import com.gm910.goeturgy.spells.spellspaces.SpellSpace.Spell;
 import com.gm910.goeturgy.spells.util.ISpellComponent;
 import com.gm910.goeturgy.tileentities.TileEntityBaseTickable;
 import com.gm910.goeturgy.util.DrawEffects;
 import com.gm910.goeturgy.util.DrawEffects.RenderBlockShape;
 import com.gm910.goeturgy.util.GMNBT;
+import com.gm910.goeturgy.util.IObjectMouseoverGui;
 import com.gm910.goeturgy.util.NonNullMap;
 import com.gm910.goeturgy.util.ServerPos;
+import com.gm910.goeturgy.util.Translate;
 
 import akka.japi.Pair;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Gui;
+import net.minecraft.client.gui.ScaledResolution;
+import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
+import net.minecraftforge.client.event.RenderGameOverlayEvent.Pre;
 import net.minecraftforge.common.util.Constants.NBT;
 
-public class MagicWire extends TileEntityBaseTickable implements ISpellComponent {
+public class MagicDelayer extends TileEntityBaseTickable implements ISpellComponent, IObjectMouseoverGui {
 	
-	public static enum SideState {
-		INPUT,
-		OUTPUT,
-		NONE;
-		public static SideState fromName(String name) {
-			for (SideState state : values()) {
-				if (state.name().equals(name)) {
-					return state;
-				}
-			}
-			return null;
-		}
-	}
 
+	private int value = 0;
+	
+	public static final int MAX_VALUE = 50;
+	
 	private Map<EnumFacing, SideState> sides = (new NonNullMap<EnumFacing, SideState>(SideState.NONE)).generateValues(EnumFacing.VALUES);
+	
 	
 	@Override
 	public boolean accepts(EnumFacing facing, NBTTagCompound comp) {
@@ -50,6 +54,12 @@ public class MagicWire extends TileEntityBaseTickable implements ISpellComponent
 			}
 		}
 		return finalReturn && this.isInput(facing);
+	}
+	
+	@Override
+	public boolean acceptsEmpty(EnumFacing face) {
+		// TODO Auto-generated method stub
+		return sides.get(face) == SideState.INPUT;
 	}
 
 	@Override
@@ -64,11 +74,6 @@ public class MagicWire extends TileEntityBaseTickable implements ISpellComponent
 		return true;
 	}
 
-	@Override
-	public boolean acceptsEmpty(EnumFacing face) {
-		// TODO Auto-generated method stub
-		return this.isInput(face);
-	}
 	
 	@Override
 	public NonNullMap<EnumFacing, NBTTagCompound> activate(Spell sp, ServerPos modifiedPos, NonNullMap<EnumFacing, NBTTagCompound> inputs) {
@@ -84,12 +89,17 @@ public class MagicWire extends TileEntityBaseTickable implements ISpellComponent
 		
 		for (EnumFacing f : outputSides) {
 			
-			outputs.put(f, inputs.get(inputSide));
+			//outputs.put(f, inputs.get(inputSide));
+			EnumFacing other = f.getOpposite();
+			SpellIOMap map = new SpellIOMap();
+			map.put(other, inputs.get(inputSide));
+			sp.markForActivationAfterDelay(pos.offset(f), this.getDelay(), map);
 		}
 		
 		/*for (EnumFacing f : inputs.keySet()) {
 			outputs.put(f.getOpposite(), inputs.get(f).copy());
 		}*/
+		
 		
 		return outputs;
 	}
@@ -203,6 +213,21 @@ public class MagicWire extends TileEntityBaseTickable implements ISpellComponent
 		return list;
 	}
 	
+	public int getDelay() {
+		return value;
+	}
+	
+	public void setDelay(int value) {
+		
+		this.value = value;
+		if (value > MAX_VALUE) {
+			this.value = value-MAX_VALUE;
+		} else if (value < 0) {
+			this.value = MAX_VALUE + value;
+		}
+		sync();
+	}
+	
 	@Override
 	public NBTTagCompound writeToNBT(NBTTagCompound compound) {
 		NBTTagList list = new NBTTagList();
@@ -213,6 +238,7 @@ public class MagicWire extends TileEntityBaseTickable implements ISpellComponent
 			list.appendTag(cmp);
 		});
 		compound.setTag("Sides", list);
+		compound.setInteger("Val", value);
 		return super.writeToNBT(compound);
 	}
 	
@@ -222,13 +248,21 @@ public class MagicWire extends TileEntityBaseTickable implements ISpellComponent
 			NBTTagCompound cmp = (NBTTagCompound)base;
 			return new Pair<EnumFacing, SideState>(EnumFacing.VALUES[cmp.getInteger("Face")], SideState.fromName(cmp.getString("State")));
 		});
+		value = compound.getInteger("Val");
 		super.readFromNBT(compound);
 	}
+	
 
-	public static class WireRenderer extends TileEntitySpecialRenderer<MagicWire> {
+	@Override
+	public void drawGuiOverlays(Pre event, Minecraft mc, Gui gui, TextureManager tex, ScaledResolution res,
+			EnumFacing sideHit, IBlockState state, Vec3d hitVec, BlockPos position, TileEntity tile, Object object) {
+		gui.drawCenteredString(mc.fontRenderer, Translate.translate("abacus.value", this.value), res.getScaledWidth() / 2 , res.getScaledHeight() / 2, 0xFF0000);
+	}
+
+	public static class DelayerRenderer extends TileEntitySpecialRenderer<MagicDelayer> {
 		
 		@Override
-		public void render(MagicWire te, double x, double y, double z, float partialTicks, int destroyStage,
+		public void render(MagicDelayer te, double x, double y, double z, float partialTicks, int destroyStage,
 				float alpha) {
 			
 			List<EnumFacing> outputs = te.getOutputSides();
@@ -247,5 +281,7 @@ public class MagicWire extends TileEntityBaseTickable implements ISpellComponent
 		}
 		
 	}
+	
+
 	
 }
