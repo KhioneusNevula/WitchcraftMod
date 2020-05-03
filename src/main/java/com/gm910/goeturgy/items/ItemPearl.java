@@ -87,9 +87,9 @@ public class ItemPearl extends ItemBase {
 		if (playerIn.world.isRemote) return super.itemInteractionForEntity(stack, playerIn, target, hand);
 		SpellSpace space = getSpellSpace(stack);
 		if (space != null) {
-			if (!space.isFullyLoaded()) {
+			/*if (!space.isFullyLoaded()) {
 				space.forceLoad(false);
-			}
+			}*/
 			space.start(target, new HashMap<>());
 		}
 		return super.itemInteractionForEntity(stack, playerIn, target, hand);
@@ -109,9 +109,9 @@ public class ItemPearl extends ItemBase {
 		if (worldIn.isRemote) return super.onItemUse(player, worldIn, pos, hand, facing, hitX, hitY, hitZ);
 		SpellSpace space = getSpellSpace(player.getHeldItem(hand));
 		if (space != null) {
-			if (!space.isFullyLoaded()) {
+			/*if (!space.isFullyLoaded()) {
 				space.forceLoad(false);
-			}
+			}*/
 			if (player.isSneaking()) {
 				space.start(player, new HashMap<>());
 			} else {
@@ -129,18 +129,23 @@ public class ItemPearl extends ItemBase {
 		
 		if (space != null && !playerIn.isSneaking()) {
 			
-			if (!space.isFullyLoaded()) {
+			/*if (!space.isFullyLoaded()) {
 				space.forceLoad(false);
-			}
-			if (space.isFullyLoaded())
+			}*/
+			/*if (space.isFullyLoaded())*/
 				space.start(new ServerPos(playerIn.getPosition(), worldIn), new HashMap<>());
-			else
-				System.out.println("Cannot load spellspace!");
+			/*else
+				System.out.println("Cannot load spellspace!");*/
 		}
 		
 		return super.onItemRightClick(worldIn, playerIn, handIn);
 	}
 
+	@Override
+	public int getItemStackLimit() {
+		// TODO Auto-generated method stub
+		return 1;
+	}
 	
 	@Override
 	public void addInformation(ItemStack stack, World worldIn, List<String> tooltip, ITooltipFlag flagIn) {

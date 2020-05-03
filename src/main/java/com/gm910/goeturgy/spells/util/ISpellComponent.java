@@ -10,6 +10,7 @@ import com.gm910.goeturgy.util.ServerPos;
 import net.minecraft.entity.Entity;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumFacing;
+import net.minecraft.util.math.BlockPos;
 
 public interface ISpellComponent extends ISpellObject {
 
@@ -34,9 +35,6 @@ public interface ISpellComponent extends ISpellObject {
 	 */
 	public boolean putInput(NonNullMap<EnumFacing, NBTTagCompound> inputs);
 	
-	public void resetInputs();
-	
-	public void resetOutputs();
 	
 	/**
 	 * Activate this and return its output, or null if failed
@@ -137,15 +135,20 @@ public interface ISpellComponent extends ISpellObject {
 	}
 	
 	public default void setSpellSpace(SpellSpace space) {
-		
 	}
 	
 	public default String getString() {
 		return this.getClass().getCanonicalName() + " at " + this.getPos();
 	}
 	
-
+	
+	public default void end(Spell runner, boolean success, BlockPos pos) {
+		
+	}
 	
 
+	public void resetInputs();
+	
+	public void resetOutputs();
 	
 }

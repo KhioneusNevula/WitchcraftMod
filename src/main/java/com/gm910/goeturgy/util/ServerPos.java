@@ -169,6 +169,7 @@ public class ServerPos extends BlockPos {
 	public ServerPos(Entity source) {
 		super(source);
 		setDim(source.dimension);
+		
 	}
 	public ServerPos(double x, double y, double z, int d) {
 		super(x, y, z);

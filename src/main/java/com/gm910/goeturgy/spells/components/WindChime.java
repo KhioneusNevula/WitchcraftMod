@@ -71,7 +71,7 @@ public class WindChime extends TileEntityBaseTickable implements ISpellComponent
 		
 		for (EnumFacing f : EnumFacing.VALUES) {
 			MagicIO.writePhysicalEntityListToCompound(entities, outputs.get(f));
-			MagicIO.writePosListToCompound(poses, outputs.get(f));
+			//MagicIO.writePosListToCompound(poses, outputs.get(f));
 		}
 		
 		return outputs;
@@ -81,7 +81,7 @@ public class WindChime extends TileEntityBaseTickable implements ISpellComponent
 	public NonNullMap<EnumFacing, List<String>> getPossibleReturns(NonNullMap<EnumFacing, List<String>> input) {
 		NonNullMap<EnumFacing, List<String>> rets = new NonNullMap<>(ArrayList<String>::new);
 		for (EnumFacing f : EnumFacing.VALUES) {
-			rets.put(f,  Lists.newArrayList(MagicIO.toList(MagicIO.ENTITY), MagicIO.toList(MagicIO.POS)));
+			rets.put(f,  Lists.newArrayList(MagicIO.toList(MagicIO.ENTITY)/*, MagicIO.toList(MagicIO.POS)*/));
 
 		}
 		return rets;

@@ -25,7 +25,7 @@ public class BlockChaliceThreshhold extends BlockBase {
 	public BlockChaliceThreshhold(String name) {
 		super(name, Material.ANVIL, true, null, CreativeTabs.MISC);
 		this.setTileEntity("chalice_threshhold", ChaliceThreshhold.class);
-		this.setDefaultState(this.blockState.getBaseState().withProperty(SIDE_PLACED, EnumFacing.DOWN));
+		this.setDefaultState(this.blockState.getBaseState().withProperty(SIDE_PLACED, EnumFacing.UP));
 	}
 	
 	@Override

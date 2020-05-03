@@ -3,7 +3,7 @@ package com.gm910.goeturgy.proxy;
 import com.gm910.goeturgy.init.TileInit;
 import com.gm910.goeturgy.messages.Messages;
 import com.gm910.goeturgy.messages.Messages.ClientMessageHandler;
-import com.gm910.goeturgy.messages.Messages.StringMessage;
+import com.gm910.goeturgy.messages.Messages.IRunnableTaskMessage;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
@@ -36,7 +36,7 @@ public class ClientProxy implements IProxy {
 	@Override
 	public void preInit() {
 		// TODO Auto-generated method stub
-		Messages.INSTANCE.registerMessage(ClientMessageHandler.class, StringMessage.class, Messages.returnNewID(), Side.CLIENT);
+		Messages.INSTANCE.registerMessage(ClientMessageHandler.class, IRunnableTaskMessage.class, Messages.returnNewID(), Side.CLIENT);
 		TileInit.registerSpecialRenderers();
 	}
 	

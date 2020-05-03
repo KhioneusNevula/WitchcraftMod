@@ -5,7 +5,7 @@ import org.apache.logging.log4j.Logger;
 import com.gm910.goeturgy.init.TileInit;
 import com.gm910.goeturgy.messages.Messages;
 import com.gm910.goeturgy.messages.Messages.ClientMessageHandler;
-import com.gm910.goeturgy.messages.Messages.StringMessage;
+import com.gm910.goeturgy.messages.Messages.IRunnableTaskMessage;
 import com.gm910.goeturgy.messages.Messages.ServerMessageHandler;
 import com.gm910.goeturgy.proxy.IProxy;
 import com.gm910.goeturgy.spells.spellspaces.SpellSpaces;

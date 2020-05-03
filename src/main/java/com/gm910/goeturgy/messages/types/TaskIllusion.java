@@ -5,6 +5,8 @@ import com.gm910.goeturgy.util.ServerPos;
 
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTUtil;
 
 public class TaskIllusion implements IRunnableTask {
 
@@ -23,6 +25,8 @@ public class TaskIllusion implements IRunnableTask {
 		this.block = block;
 	}
 	
+	public TaskIllusion() {}
+	
 	@Override
 	public void run() {
 
@@ -30,6 +34,5 @@ public class TaskIllusion implements IRunnableTask {
 		if (Minecraft.getMinecraft().world.provider.getDimension() != pos.d) return;
 		DrawEffects.drawBlock(Minecraft.getMinecraft().getRenderPartialTicks(), block, pos, 1.0f);
 	}
-
 	
 }

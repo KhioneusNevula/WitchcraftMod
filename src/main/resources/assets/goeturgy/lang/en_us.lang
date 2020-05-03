@@ -1,12 +1,48 @@
 #Items
 item.chalk_dust.name=Chalk Dust
 item.dust_bag.name=Bag of Chalk Dust
+item.waystone.name=Waystone
 
 #Blocks
 tile.chalk_block.name=Chalk
 
 #Screen
 abacus.value=Number: %s
+
+datablock.restricttrue=Filters out %s
+datablock.restrictfalse=Filters out all data except %s
+
+sieve.restricttrue=Filters out only data given through filtering input
+sieve.restrictfalse=Filters out all data except data given through filtering input
+
+typefilteritem.datatag=Switch tag to be filtered
+typefilteritem.list=Toggle whether list type of tag is to be filtered
+typefilteritem.restrict=Toggle whether block should restrict every type except this one or only this type
+typefilteritem.ioside=Change whether sides are inputs or outputs
+typefilteritem.null=Usage state??
+
+#IO
+io.string=String
+io.integer=Integer
+io.position=Position
+io.entity=Entity DNA
+io.boolean=Boolean
+io.long=Long
+io.species=Species
+io.itemstack=Item
+io.block=Block
+io.entitydata=Entity Properties
+
+io.stringlist=List of Strings
+io.integerlist=List of Integers
+io.positionlist=List of Positions
+io.entitylist=List of Entity DNA
+io.booleanlist=List of Booleans
+io.longlist=List of Longs
+io.specieslist=List of Species
+io.itemstacklist=List of Items
+io.blocklist=List of Blocks
+io.entitydatalist=List of Stored Entity Properties
 
 #Pearl
 pearl.unbound=No binding
@@ -15,6 +51,9 @@ pearl.withspellspace=Linked to spellspace: %1$s at position %2$s
 
 #Waystone
 waystone.bound=%1$s at %2$s
+
+#DNA thing
+dnacollect.bound=Bound to %s
 
 #Misc
 null=%sNone

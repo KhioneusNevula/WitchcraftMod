@@ -83,7 +83,7 @@ public class Pulser extends TileEntityBaseTickable implements ISpellComponent, I
 				end();
 				return outputs;
 			}
-			
+			System.out.println("Pulser using list" + data);
 			makeOutputs(0, outputs);
 			waitingToActivate = true;
 			sp.markForActivationNextTick(this.pos, null);

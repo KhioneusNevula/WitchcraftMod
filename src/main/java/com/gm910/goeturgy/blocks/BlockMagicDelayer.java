@@ -25,7 +25,7 @@ public class BlockMagicDelayer extends BlockBase {
 	public BlockMagicDelayer(String name) {
 		super(name, Material.ANVIL, true, null, CreativeTabs.MISC);
 		this.setTileEntity("magic_delayer", MagicDelayer.class);
-		this.setDefaultState(this.blockState.getBaseState().withProperty(SIDE_PLACED, EnumFacing.DOWN));
+		this.setDefaultState(this.blockState.getBaseState().withProperty(SIDE_PLACED, EnumFacing.UP));
 	}
 	
 	@Override

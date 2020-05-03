@@ -10,10 +10,13 @@ import com.gm910.goeturgy.blocks.BlockMagicDelayer;
 import com.gm910.goeturgy.blocks.BlockMagicWire;
 import com.gm910.goeturgy.blocks.BlockMagicalBarrier;
 import com.gm910.goeturgy.blocks.BlockMysticLodestone;
+import com.gm910.goeturgy.blocks.BlockPoppetMaker;
+import com.gm910.goeturgy.blocks.BlockSieve;
 import com.gm910.goeturgy.blocks.BlockSpellDust;
 import com.gm910.goeturgy.spells.components.EnderPearlBlock;
 import com.gm910.goeturgy.spells.components.InitiatorPearlBlock;
 import com.gm910.goeturgy.spells.components.LightningSummoner;
+import com.gm910.goeturgy.spells.components.MagicTypeFilterBlock;
 import com.gm910.goeturgy.spells.components.Pedestal;
 import com.gm910.goeturgy.spells.components.PhilosophicCrystal;
 import com.gm910.goeturgy.spells.components.Pulser;
@@ -42,6 +45,9 @@ public class BlockInit {
 	public static final Block PULSER = (new BlockBase("pulser", Material.CLAY)).setTileEntity("pulser", Pulser.class);
 	public static final Block ENDER_PEARL_BLOCK = (new BlockBase("ender_pearl_block", Material.IRON)).setTileEntity("ender_pearl_block", EnderPearlBlock.class);
 	public static final Block MYSTIC_LODESTONE = (new BlockMysticLodestone("mystic_lodestone"));
+	public static final Block LIST_FILTERER = (new BlockSieve("magical_sieve"));
+	public static final Block DATA_TYPE_FILTERER = (new BlockBase("type_filterer_block", Material.IRON)).setTileEntity("type_filterer", MagicTypeFilterBlock.class);
+	public static final Block POPPET_MAKER = new BlockPoppetMaker("poppet_maker");
 	
 	/**Misc**/
 	public static final Block MAGICAL_BARRIER = (new BlockMagicalBarrier("magical_barrier"));

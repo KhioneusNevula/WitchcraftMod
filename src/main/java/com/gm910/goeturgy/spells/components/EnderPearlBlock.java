@@ -2,6 +2,8 @@ package com.gm910.goeturgy.spells.components;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
+import java.util.function.Supplier;
 
 import com.gm910.goeturgy.spells.ioflow.MagicIO;
 import com.gm910.goeturgy.spells.spellspaces.SpellSpace.Spell;
@@ -14,6 +16,8 @@ import com.gm910.goeturgy.world.util.Teleport;
 import net.minecraft.entity.Entity;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumFacing;
+import net.minecraft.util.EnumParticleTypes;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 
 /**
@@ -81,15 +85,24 @@ public class EnderPearlBlock extends TileEntityBaseTickable implements ISpellCom
 		}
 		
 		for (Entity en : ls) {
+			ServerPos formerPos = new ServerPos(en);
 			if (toPos == null) {
 				System.out.println("Teleporting entity forward");
 				if (en == null) continue;
 				if (en.getPositionVector() == null) continue;
 				if (en.getLookVec() == null) continue;
 				Vec3d ottopos = en.getPositionVector().add(en.getLookVec());
+				toPos = new ServerPos(new BlockPos(ottopos), en.dimension);
 				en.setPositionAndUpdate(ottopos.x, ottopos.y + 0.5, ottopos.z);
 			} else {
 				Teleport.teleportToDimension(en, toPos);
+			}
+			Supplier<Double> rand = () -> ((new Random()).nextDouble() * 2 - 1);
+			
+			for (int i = 0; i < 50; i++) {
+				sp.getSpellSpace().spawnParticles(EnumParticleTypes.PORTAL, false, new Vec3d(toPos.getX() + 0.5 + rand.get(), toPos.getY()+ 0.5 + rand.get(), toPos.getZ() + 0.5 + rand.get()), new Vec3d(rand.get(), rand.get(), rand.get()), toPos.d, 4);
+				sp.getSpellSpace().spawnParticles(EnumParticleTypes.PORTAL, false, new Vec3d(formerPos.getX() + 0.5 + rand.get(), formerPos.getY()+ 0.5 + rand.get(), formerPos.getZ() + 0.5 + rand.get()), new Vec3d(rand.get(), rand.get(), rand.get()), formerPos.d, 4);
+				
 			}
 		}
 		return new NonNullMap<EnumFacing, NBTTagCompound>(NBTTagCompound::new);
@@ -134,6 +147,8 @@ public class EnderPearlBlock extends TileEntityBaseTickable implements ISpellCom
 		return 50;
 	}
 
-	
+	public String toString() {
+		return "Ender Pearl Block at " + pos;
+	}
 
 }

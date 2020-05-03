@@ -1,0 +1,21 @@
+#Items
+item.chalk_dust.name=Polvo de Caliza
+item.dust_bag.name=Bolso de Polvo de Caliza
+item.waystone.name=Viapiedra
+
+#Blocks
+tile.chalk_block.name=Caliza
+
+#Screen
+abacus.value=Numero: %s
+
+#Pearl
+pearl.unbound=Desatado
+pearl.broken=%1$sBloque a posicion %2$s esta roto
+pearl.withspellspace=Enlazado a hechizolugar: %1$s a posicion %2$s
+
+#Waystone
+waystone.bound=%1$s a %2$s
+
+#Misc
+null=%sNada

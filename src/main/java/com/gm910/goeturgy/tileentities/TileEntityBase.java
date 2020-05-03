@@ -6,24 +6,32 @@ import com.gm910.goeturgy.spells.spellspaces.SpellSpaces;
 import com.gm910.goeturgy.util.NonNullMap;
 
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.network.NetworkManager;
-import net.minecraft.network.play.server.SPacketUpdateTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
 import net.minecraftforge.common.util.Constants.NBT;
-import net.minecraftforge.fml.common.registry.GameRegistry;
 
 /**
  * Includes useful input and output list for spellspace magics and stuff
  * @author borah
  *
  */
-public abstract class TileEntityBase extends TileEntity {
+public abstract class TileEntityBase extends TileEntity implements ISyncableTile {
 	
 
+	
 	protected NonNullMap<EnumFacing, NBTTagCompound> inputs = new NonNullMap<EnumFacing, NBTTagCompound>(NBTTagCompound::new);
 	protected NonNullMap<EnumFacing, NBTTagCompound> outputs = new NonNullMap<EnumFacing, NBTTagCompound>(NBTTagCompound::new);
 	protected long figure;
+	
+	//protected SpellComponent personalComponent;
+	
+	public TileEntityBase() {
+		
+	}
+	
+	/*public TileEntityBase(SpellComponent personalComponent) {
+		this.personalComponent = personalComponent;
+	}*/
 	
 	@Override
 	public void onLoad() {
@@ -31,38 +39,9 @@ public abstract class TileEntityBase extends TileEntity {
 		super.onLoad();
 	}
 	
-	public void sync() {
-		world.markBlockRangeForRenderUpdate(pos, pos);
-		world.notifyBlockUpdate(pos, world.getBlockState(pos), world.getBlockState(pos), 3);
-		world.scheduleBlockUpdate(pos,this.getBlockType(),0,0);
-		this.updateContainingBlockInfo();
-		
-		markDirty();
-	}
-
-	@Override
-	public NBTTagCompound getUpdateTag() {
-		// TODO Auto-generated method stub
-		return this.writeToNBT(new NBTTagCompound());
-	}
-	
-	@Override
-	public SPacketUpdateTileEntity getUpdatePacket() {
-		return new SPacketUpdateTileEntity(pos, 0, this.getUpdateTag());
-	}
-	
-	@Override
-	public void onDataPacket(NetworkManager net, SPacketUpdateTileEntity pkt) {
-		
-		super.onDataPacket(net, pkt);
-		this.handleUpdateTag(pkt.getNbtCompound());
-	}
-	
-	@Override
-	public void handleUpdateTag(NBTTagCompound tag) {
-		// TODO Auto-generated method stub
-		super.handleUpdateTag(tag);
-	}
+	/*public SpellComponent getProvidedComponent() {
+		return personalComponent;
+	}*/
 	
 	@Override
 	public NBTTagCompound writeToNBT(NBTTagCompound compound) {
@@ -71,6 +50,9 @@ public abstract class TileEntityBase extends TileEntity {
 		cmp.setTag("Inp", MagicIO.nonNullMapToNBT(inputs));
 		cmp.setTag("Outp", MagicIO.nonNullMapToNBT(outputs));
 		cmp.setLong("Figure", this.figure);
+		/*if (personalComponent != null) {
+			cmp.setTag("Component", personalComponent.writeToNBT(new NBTTagCompound()));
+		}*/
 		return cmp;
 	}
 	
@@ -80,8 +62,22 @@ public abstract class TileEntityBase extends TileEntity {
 		outputs = MagicIO.nonNullMapFromNBT(compound.getTagList("Outp", NBT.TAG_COMPOUND));
 		this.figure = compound.getLong("Figure");
 		super.readFromNBT(compound);
+		/*if (compound.hasKey("Component")) {
+			this.personalComponent = SpellComponent.createForName(compound.getString("Type"));
+			personalComponent.readFromNBT(compound);
+		}*/
 	}
 	
+
+	public void setSpellSpace(SpellSpace space) {
+		if (space != null) {
+			this.figure = space.getID();
+		} else {
+			this.figure = -1;
+		}
+	}
+	
+
 	public void setSpaceID(long id) {
 		this.figure = id;
 	}
@@ -92,7 +88,9 @@ public abstract class TileEntityBase extends TileEntity {
 		return figure;
 	}
 	
-	
+	public TileEntity getTile() {
+		return this.world.getTileEntity(pos);
+	}
 	
 	public void resetInputs() {
 		this.inputs.clear();
@@ -101,5 +99,8 @@ public abstract class TileEntityBase extends TileEntity {
 	public void resetOutputs() {
 		this.outputs.clear();
 	}
+	
+	
+	
 	
 }

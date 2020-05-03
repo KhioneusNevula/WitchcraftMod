@@ -135,6 +135,10 @@ public class SpellSpaces extends WorldSavedData implements Collection<SpellSpace
 		return null;
 	}
 	
+	public List<SpellSpace> getInDimension(int dim) {
+		return this.spellSpacesByWorld.get(dim);
+	}
+	
 	public long returnNewID() {
 		long id = currentID;
 		currentID++;
@@ -175,7 +179,7 @@ public class SpellSpaces extends WorldSavedData implements Collection<SpellSpace
 		}
 	}
 	
-	private static SpellSpaces get(World world) {
+	public static SpellSpaces get(World world) {
 		  
 		  MapStorage storage = world.getMapStorage();
 		  SpellSpaces instance = (SpellSpaces) storage.getOrLoadData(SpellSpaces.class, NAME);

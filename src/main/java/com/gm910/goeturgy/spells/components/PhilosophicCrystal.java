@@ -2,6 +2,8 @@ package com.gm910.goeturgy.spells.components;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
+import java.util.function.Supplier;
 
 import com.gm910.goeturgy.spells.ioflow.BlockStack;
 import com.gm910.goeturgy.spells.ioflow.MagicIO;
@@ -13,11 +15,12 @@ import com.gm910.goeturgy.util.NonNullMap;
 import com.gm910.goeturgy.util.ServerPos;
 import com.google.common.collect.Lists;
 
-import net.minecraft.block.material.Material;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumFacing;
+import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.minecraftforge.common.DimensionManager;
 
@@ -92,6 +95,9 @@ public class PhilosophicCrystal extends TileEntityBaseTickable implements ISpell
 				block.setInWorld(spos);
 				blocksRet.add(prevStack);
 				itemRet.addAll(drops);
+				Supplier<Double> rand = () -> ((new Random()).nextDouble() * 2 - 1);
+				
+				for (int i = 0; i < 20; i++) sp.getSpellSpace().spawnParticles(EnumParticleTypes.SPELL_INSTANT, false, new Vec3d(pos.getX() + 0.5 + rand.get(), pos.getY()+ 0.5 + rand.get(), pos.getZ() + 0.5 + rand.get()), new Vec3d(rand.get(), rand.get(), rand.get()), spos.d, 4);
 			}
 		}
 		for (EnumFacing f : EnumFacing.VALUES) {

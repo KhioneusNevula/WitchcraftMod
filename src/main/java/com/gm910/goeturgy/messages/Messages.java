@@ -5,16 +5,20 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.nio.charset.Charset;
 
 import com.gm910.goeturgy.Goeturgy;
 import com.gm910.goeturgy.messages.types.IRunnableTask;
 import com.gm910.goeturgy.spells.spellspaces.SpellSpace;
+import com.gm910.goeturgy.util.GMReflection;
 
 import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.nbt.NBTBase;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.JsonUtils;
+import net.minecraftforge.common.util.Constants.NBT;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
@@ -27,40 +31,41 @@ public class Messages {
 	
 	public static final SimpleNetworkWrapper INSTANCE = NetworkRegistry.INSTANCE.newSimpleChannel(Goeturgy.MODID);
 
-	public static class StringMessage implements IMessage {
+	public static class IRunnableTaskMessage implements IMessage {
 		  // A default constructor is always required
-		  public StringMessage(){}
+		  public IRunnableTaskMessage(){}
 
-		  private String toSend;
+		  private IRunnableTask toSend;
 		  /**
 		   * Please send runnables by casting them to (Runnable & Serializable)
 		   * @param toSend
 		   */
-		  public StringMessage(IRunnableTask toSend) {
-		    this.toSend = serialize(toSend);
+		  public IRunnableTaskMessage(IRunnableTask toSend) {
+		    this.toSend = toSend;
 		  }
 
 		  @Override public void toBytes(ByteBuf buf) {
-			buf.writeInt(toSend.length());
-		    buf.writeCharSequence(toSend, Charset.defaultCharset());
+			buf.writeInt(serialize(toSend).length());
+			buf.writeCharSequence(serialize(toSend), Charset.defaultCharset());
 		  }
 
 		  @Override public void fromBytes(ByteBuf buf) {
 		    // Reads the int back from the buf. Note that if you have multiple values, you must read in the same order you wrote.
-		    int len = buf.readInt();
-			 toSend = buf.readCharSequence(len, Charset.defaultCharset()).toString();
+		     
+			  int len = buf.readInt();
+			 String dat = (String) buf.readCharSequence(len, Charset.defaultCharset());
+			 this.toSend = (IRunnableTask)deserialize(dat);
 			 
 		  }
 		}
 	
-	public static class ServerMessageHandler implements IMessageHandler<StringMessage, IMessage> {
+	public static class ServerMessageHandler implements IMessageHandler<IRunnableTaskMessage, IMessage> {
 		  // Do note that the default constructor is required, but implicitly defined in this case
 
-		  @Override public IMessage onMessage(StringMessage message, MessageContext ctx) {
+		  @Override public IMessage onMessage(IRunnableTaskMessage message, MessageContext ctx) {
 		    EntityPlayerMP serverPlayer = ctx.getServerHandler().player;
-		    String amount = message.toSend.toString();
-		    Object check = deserialize(amount);
-		    if (!(check instanceof IRunnableTask)) {
+		    IRunnableTask check = message.toSend;
+		    if (check == null) {
 
 				  System.err.println("Problem sending message to server");
 		    	return null;
@@ -72,20 +77,18 @@ public class Messages {
 		  }
 	}
 	
-	public static class ClientMessageHandler implements IMessageHandler<StringMessage, IMessage> {
+	public static class ClientMessageHandler implements IMessageHandler<IRunnableTaskMessage, IMessage> {
 		  // Do note that the default constructor is required, but implicitly defined in this case
 
-		  @Override public IMessage onMessage(StringMessage message, MessageContext ctx) {
+		  @Override public IMessage onMessage(IRunnableTaskMessage message, MessageContext ctx) {
 			  
 			  
-			  String amount = message.toSend.toString();
-			  Object check = deserialize(amount);
-			  if (!(check instanceof IRunnableTask)) {
+			  IRunnableTask check = message.toSend;
+			  if (check == null) {
 				  System.err.println("Problem sending message to client");
 				  return null;
 			  }
-			  IRunnableTask toRun = (IRunnableTask)deserialize(amount);
-			  Minecraft.getMinecraft().addScheduledTask(() -> SpellSpace.runClients.add(toRun));
+			  Minecraft.getMinecraft().addScheduledTask(() -> SpellSpace.runClients.add(check));
 		    // No response packet
 		    return null;
 		  }
@@ -96,7 +99,7 @@ public class Messages {
 	      try(ObjectOutputStream outputStream = new ObjectOutputStream(stream1)) {
 	         outputStream.writeObject(obj);
 	      } catch (IOException e) {
-			System.out.println("Problem serializing " + obj + " threw " + e);
+			System.out.println("Serializing " + obj + " threw " + e);
 		}
 	      
 	      return stream1.toString();
@@ -108,7 +111,7 @@ public class Messages {
 	         return inputStream.readObject();
 	      } catch (IOException | ClassNotFoundException e) {
 			// TODO Auto-generated catch block
-			System.err.println("Problem deserializing " + from + " threw " + e);
+			System.err.println("Deserializing " + from + " threw " + e);
 		} 
 	      return null;
 	 }

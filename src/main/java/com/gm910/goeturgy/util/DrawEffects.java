@@ -135,7 +135,7 @@ public class DrawEffects {
 		
 	}
 	
-	public static void drawEntity(float partialTicks, Entity en, float scale) {
+	public static void drawEntity(float partialTicks, Entity en, double x, double y, double z, float yaw, float scale) {
 		Entity entity = Minecraft.getMinecraft().getRenderViewEntity();
 		
 		double d0 = entity.lastTickPosX + (entity.posX - entity.lastTickPosX) * (double)partialTicks;
@@ -160,7 +160,7 @@ public class DrawEffects {
 		//buf.begin(7, DefaultVertexFormats.BLOCK);
 		//BlockRendererDispatcher renderer = Minecraft.getMinecraft().getBlockRendererDispatcher();
 		RenderManager ren = Minecraft.getMinecraft().getRenderManager();
-		ren.renderEntity(en, 0, 0, 0, 0, partialTicks, false);
+		ren.renderEntity(en, x, y, z, yaw, partialTicks, false);
 		//renderer.getBlockModelRenderer().renderModel(Minecraft.getMinecraft().player.world, renderer.getModelForState(state), state, pos, buf, false);type name = new type();
 		
 		Tessellator.getInstance().draw();

@@ -17,6 +17,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.texture.TextureManager;
+import net.minecraft.entity.Entity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
@@ -45,18 +46,24 @@ public class MysticLodestone extends TileEntityBaseTickable implements ISpellCom
 	
 	@Override
 	public boolean accepts(EnumFacing facing, NBTTagCompound comp) {
+		System.out.println("Lodestone checking compound " + comp);
 		ItemStack stack = MagicIO.getItemStack(comp);
 		if (!stack.isEmpty()) {
 			if (stack.getItem() instanceof ItemWaystone && getPosition(stack) != null && !MagicIO.has(MagicIO.ITEM, inputs) && waystone.isEmpty()) {
 				return true;
 			}
 		}
+		Entity e = MagicIO.getPhysicalEntity(comp);
+		System.out.println("Lodestone checking entity " + MagicIO.getEntity(comp) + " at face " + facing + ";");
+		if (e != null) {
+			return true;
+		}
 		return false;
 	}
 
 	@Override
 	public boolean isStatic() {
-		return true;
+		return waystone != null ? !waystone.isEmpty() : false;
 	}
 	
 	@Override
@@ -116,12 +123,24 @@ public class MysticLodestone extends TileEntityBaseTickable implements ISpellCom
 	@Override
 	public NonNullMap<EnumFacing, NBTTagCompound> activate(Spell sp, ServerPos modifiedPos, NonNullMap<EnumFacing, NBTTagCompound> map) {
 		ItemStack stack = getWaystone(map);
-		if (stack.isEmpty()) {
-			return null;
+		ServerPos position = null;
+		if (!stack.isEmpty()) {
+			position = getPosition(stack);
+		} else {
+			Entity ent = null;
+			for (EnumFacing f : EnumFacing.VALUES) {
+				ent = MagicIO.getPhysicalEntity(map.get(f)) != null ? MagicIO.getPhysicalEntity(map.get(f)) : ent;
+				
+			}
+			if (ent != null) {
+				position = new ServerPos(ent);
+			}
 		}
+		if (position == null) return null;
+		final ServerPos position1 = position;
 		NonNullMap<EnumFacing, NBTTagCompound> so = new NonNullMap<>( () ->  {
 			NBTTagCompound cmp = new NBTTagCompound();
-			MagicIO.writePosToCompound(this.getPosition(stack), cmp);
+			MagicIO.writePosToCompound(position1, cmp);
 			return cmp;
 		});
 		so.generateValues(EnumFacing.VALUES);

@@ -49,4 +49,10 @@ public class ItemDustBag extends ItemBase {
         }
 	}
 
+	@Override
+	public int getItemStackLimit() {
+		// TODO Auto-generated method stub
+		return 1;
+	}
+	
 }

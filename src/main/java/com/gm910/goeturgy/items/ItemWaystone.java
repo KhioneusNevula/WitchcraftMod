@@ -74,6 +74,12 @@ public class ItemWaystone extends ItemBase {
 		}
 		return super.onItemUse(player, worldIn, pos, hand, facing, hitX, hitY, hitZ);
 	}
+	
+	@Override
+	public int getItemStackLimit() {
+		// TODO Auto-generated method stub
+		return 1;
+	}
 
 	
 	@Override
@@ -87,7 +93,7 @@ public class ItemWaystone extends ItemBase {
 			IBlockState state = NBTUtil.readBlockState(stack.getOrCreateSubCompound(LINKED_DATA_TAG).getCompoundTag("BlockState"));
 			Item item = Item.getItemFromBlock(state.getBlock());
 			if (item == Items.AIR) {
-				tooltip.add(Translate.translate("waystone.bound", state, pos));
+				tooltip.add(Translate.translate("waystone.bound", state.getBlock().getLocalizedName(), pos));
 			} else {
 				ItemStack stack2 = new ItemStack(state.getBlock(), 1, state.getBlock().getMetaFromState(state));
 				tooltip.add(Translate.translate("waystone.bound", stack2.getDisplayName(), pos));

@@ -6,7 +6,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.play.server.SPacketParticles;
 import net.minecraftforge.common.util.INBTSerializable;
 
-public interface IRunnableTask extends Serializable, Runnable {
+public interface IRunnableTask extends Serializable {
 
 	public void run();
 	

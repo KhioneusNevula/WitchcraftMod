@@ -6,7 +6,9 @@ import java.util.Map;
 import com.gm910.goeturgy.Goeturgy;
 import com.gm910.goeturgy.spells.components.ChaliceThreshhold;
 import com.gm910.goeturgy.spells.components.MagicDelayer;
+import com.gm910.goeturgy.spells.components.MagicTypeFilterBlock;
 import com.gm910.goeturgy.spells.components.MagicWire;
+import com.gm910.goeturgy.spells.components.MagicalSieve;
 
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ResourceLocation;
@@ -37,5 +39,10 @@ public class TileInit {
 		ClientRegistry.bindTileEntitySpecialRenderer(MagicDelayer.class, new MagicDelayer.DelayerRenderer());
 		
 		ClientRegistry.bindTileEntitySpecialRenderer(ChaliceThreshhold.class, new ChaliceThreshhold.ThreshRenderer());
+		
+		ClientRegistry.bindTileEntitySpecialRenderer(MagicalSieve.class, new MagicalSieve.SieveRenderer());
+		
+		ClientRegistry.bindTileEntitySpecialRenderer(MagicTypeFilterBlock.class, new MagicTypeFilterBlock.DataBlockRenderer());
+		
 	}
 }

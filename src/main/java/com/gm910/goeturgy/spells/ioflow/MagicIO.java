@@ -14,6 +14,7 @@ import com.gm910.goeturgy.Goeturgy;
 import com.gm910.goeturgy.util.GMNBT;
 import com.gm910.goeturgy.util.NonNullMap;
 import com.gm910.goeturgy.util.ServerPos;
+import com.gm910.goeturgy.util.Translate;
 import com.google.common.base.Functions;
 import com.google.common.collect.Lists;
 
@@ -74,7 +75,11 @@ public abstract class MagicIO {
 		ITEM, BLOCK,
 		ENTITY_DATA
 	);
-			
+	
+
+	public static final List<String> TAG_TYPES_INCLUDING_LISTS = new ArrayList<>(TAG_TYPES);
+	
+	public static final List<String> TAG_TYPES_AS_LISTS = new ArrayList<>();
 	
 	public static String toList(String name) {
 		return name.indexOf("List") == -1 ? name + "List" : name;
@@ -82,6 +87,10 @@ public abstract class MagicIO {
 	
 	public static String notList(String listName) {
 		return listName.indexOf("List") != -1 ? listName.substring(0, listName.indexOf("List")) : listName;
+	}
+	
+	public static String translate(String tag) {
+		return Translate.translate("io." + tag.toLowerCase());
 	}
 	
 	public static <T> T get(String k, NBTTagCompound cmp, Function<String, T> func) {
@@ -104,12 +113,12 @@ public abstract class MagicIO {
 	
 	public static UUID getEntity(NBTTagCompound cmp) {
 		
-		return get(ENTITY, cmp, cmp::getUniqueId);
+		return get(ENTITY, cmp, (s) -> cmp.getCompoundTag(ENTITY).getUniqueId(ENTITY) );
 	}
 	
 	public static <T extends Entity> T getPhysicalEntity(Class<T> clazz, NBTTagCompound cmp) {
-		if (get(ENTITY, cmp, cmp::getUniqueId) == null) return null;
-		return entityfromid(clazz, get(ENTITY, cmp, cmp::getUniqueId));
+		if (getEntity(cmp) == null) return null;
+		return entityfromid(clazz, getEntity(cmp));
 	}
 	
 	public static Entity getPhysicalEntity(NBTTagCompound cmp) {
@@ -287,6 +296,20 @@ public abstract class MagicIO {
 			}
 		}
 		return false;
+	}
+	
+	/**
+	 * Assumption that this compound only has one list
+	 * @param cmp
+	 * @return
+	 */
+	public static int getSingleListLength(NBTTagCompound cmp) {
+		for (String s : TAG_TYPES) {
+			if (cmp.hasKey(toList(s), NBT.TAG_LIST)) {
+				return cmp.getTagList(toList(s), LIST_TYPE_FOR_TAG.get(s)).tagCount();
+			}
+		}
+		return -1;
 	}
 	
 	public static NonNullMap<EnumFacing, NBTTagCompound> makeMap() {
@@ -592,7 +615,17 @@ public abstract class MagicIO {
 		return nbt;
 	}
 	
+	
+	
 	static {
+		
+		List<String> tagwithlist = new ArrayList<>(TAG_TYPES);
+		
+		for (String tag : tagwithlist) {
+			TAG_TYPES_INCLUDING_LISTS.add(toList(tag));
+			TAG_TYPES_AS_LISTS.add(toList(tag));
+		}
+		
 		TYPE_FOR_TAG.put(STRING, String.class);
 		TYPE_FOR_TAG.put(INT, int.class);
 		TYPE_FOR_TAG.put(POS, ServerPos.class);

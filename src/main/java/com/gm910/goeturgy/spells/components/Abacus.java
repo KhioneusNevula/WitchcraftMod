@@ -155,5 +155,10 @@ public class Abacus extends TileEntityBaseTickable implements ISpellComponent, I
 		gui.drawCenteredString(mc.fontRenderer, Translate.translate("abacus.value", this.value), res.getScaledWidth() / 2 , res.getScaledHeight() / 2, 0xFF0000);
 	}
 	
+	@Override
+	public String toString() {
+		// TODO Auto-generated method stub
+		return "Abacus at " + pos;
+	}
 
 }
