@@ -1,14 +1,14 @@
 package com.gm910.goeturgy.items;
 
 import java.util.List;
-import java.util.Set;
+import java.util.UUID;
 
+import com.gm910.goeturgy.Goeturgy;
 import com.gm910.goeturgy.util.Translate;
 
 import net.minecraft.client.util.ITooltipFlag;
-import net.minecraft.entity.EntityLiving;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.ai.EntityAITasks.EntityAITaskEntry;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -19,44 +19,57 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.Constants.NBT;
 
-public class ItemDNACollector extends ItemBase {
-	/**
-	 * DNA Format
-	 * {Abilities: <ai list>, EntityData: <entity data>, Stats: <stats on health, etc>}
-	 */
-	public static final String LINKED_DATA_TAG = "StoredEntityData";
+public class ItemIdentityCollector extends ItemBase {
 	
+	public static final String LINKED_DATA_TAG = "LinkedEntity";
 
-	public ItemDNACollector(String name) {
+	public ItemIdentityCollector(String name) {
 		super(name);
 	}
 	
 
-	public static ItemStack storeDNA(EntityLivingBase en, ItemStack stack) {
-		NBTTagCompound tag = stack.getOrCreateSubCompound(LINKED_DATA_TAG);
+	public static ItemStack linkToEntity(UUID en, ItemStack stack) {
+		NBTTagCompound tag = stack.getSubCompound(LINKED_DATA_TAG);
 		
-		if (en != null) {
-			/*if (en instanceof EntityLiving) {
-				EntityLiving enl = (EntityLiving )en;
-				Set<EntityAITaskEntry> ais = enl.tasks.taskEntries;
-				for (EntityAITaskEntry ent : ais) {
-					
-				}
-			}*/
+		if (en != null && tag != null) {
+			tag.setUniqueId("Entity", en);
 		}
 		
 		return stack;
 	}
 	
-	public static NBTTagCompound getDNAData(ItemStack stack) {
-		return stack.getSubCompound(LINKED_DATA_TAG);
+	public static UUID getLinkedUUID(ItemStack stack) {
+		if (stack.getSubCompound(LINKED_DATA_TAG) == null) return null;
+		//if (!stack.getTagCompound().hasKey(LINKED_DATA_TAG)) return null;
+		return stack.getSubCompound(LINKED_DATA_TAG).getUniqueId("Entity");
+	}
+	
+	public static Entity getEntity(ItemStack stack) {
+		if (getLinkedUUID(stack) == null) return null;
+		return Goeturgy.proxy.getServer().getEntityFromUuid(getLinkedUUID(stack));
+	}
+	
+	@Override
+	public void onUpdate(ItemStack stack, World worldIn, Entity entityIn, int itemSlot, boolean isSelected) {
+		if (worldIn.isRemote) return;
+		if (!isSelected) return;
+		if (worldIn.rand.nextInt(14) >= 2) return;
+		
+		Entity en = getEntity(stack);
+		
+		if (en == null) {
+			return;
+		}
+		
+		stack.getOrCreateSubCompound(LINKED_DATA_TAG).setString("Name", en.getDisplayName().getFormattedText());
+		
 	}
 	
 	@Override
 	public boolean itemInteractionForEntity(ItemStack stack, EntityPlayer playerIn, EntityLivingBase target,
 			EnumHand hand) {
 		if (!playerIn.isSneaking()) {
-			ItemDNACollector.storeDNA(target, stack);
+			ItemIdentityCollector.linkToEntity(target.getUniqueID(), stack);
 			playerIn.setHeldItem(hand, stack);
 			return true;
 		}
@@ -74,7 +87,7 @@ public class ItemDNACollector extends ItemBase {
 			EnumFacing facing, float hitX, float hitY, float hitZ) {
 		if (player.isSneaking()) {
 			ItemStack stack = player.getHeldItem(hand);
-			ItemDNACollector.storeDNA(player, stack);
+			ItemIdentityCollector.linkToEntity(player.getUniqueID(), stack);
 			player.setHeldItem(hand, stack);
 			return EnumActionResult.SUCCESS;
 		}

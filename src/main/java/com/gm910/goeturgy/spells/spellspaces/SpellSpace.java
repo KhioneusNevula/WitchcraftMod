@@ -16,9 +16,12 @@ import javax.annotation.Nullable;
 
 import com.gm910.goeturgy.Goeturgy;
 import com.gm910.goeturgy.init.BlockInit;
+import com.gm910.goeturgy.messages.Messages;
+import com.gm910.goeturgy.messages.Messages.TaskMessage;
 import com.gm910.goeturgy.messages.types.IRunnableTask;
 import com.gm910.goeturgy.messages.types.TaskIllusion;
 import com.gm910.goeturgy.messages.types.TaskParticles;
+import com.gm910.goeturgy.spells.SpecialSpellComponentRegistry;
 import com.gm910.goeturgy.spells.components.MagicWire;
 import com.gm910.goeturgy.spells.events.space.ActivateSpellSpaceEvent;
 import com.gm910.goeturgy.spells.events.space.ComponentActivationEvent;
@@ -438,6 +441,11 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 		if (!this.isLoaded(pos)) {
 			return spellParts.getComponent(pos);
 		}
+		if (this.getWorld().getTileEntity(pos) != null) {
+			if (SpecialSpellComponentRegistry.get(this.getWorld().getTileEntity(pos).getClass()) != null) {
+				return SpecialSpellComponentRegistry.get(this.getWorld().getTileEntity(pos).getClass());
+			}
+		}
 		return this.getWorld().getTileEntity(pos) instanceof ISpellComponent ? (ISpellComponent)this.getWorld().getTileEntity(pos) : null;
 	}
 	
@@ -571,8 +579,8 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 	 * @param event
 	 */
 	public void causeEventOnClient(IRunnableTask event) {
-		//Messages.INSTANCE.sendToAll(new StringMessage(event));
-		runClients.add(event);
+		Messages.INSTANCE.sendToAll(new TaskMessage(event));
+		//runClients.add(event);
 	}
 	
 	/**
@@ -762,7 +770,7 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 	 * @return
 	 */
 	public World getWorldSoft() {
-		return DimensionManager.getWorlds()[this.dimension];
+		return DimensionManager.getWorld(this.dimension);
 	}
 	
 	/**
@@ -951,6 +959,7 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 		for (IRunnableTask task : runServers) {
 			task.run();
 		}
+		runServers.clear();
 		
 		List<SpellSpace> spaces = new ArrayList<>(SpellSpaces.get().getAsList());
 		for (SpellSpace space : spaces) {
@@ -980,13 +989,14 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 		if (event.player.world.provider.getDimension() != this.dimension) return;
 		
 		this.tick();
-		
+		//causeEventOnClient((e) -> EntityCelestialBeam.summonCelestialBeam(event.player.world, headPos.getX(), headPos.getY(), headPos.getZ(), 2, false));
 		if (isRemoved()) {
 			SpellSpaces.get().removeSpellSpace(this);
 			return;
 		}
 		for (BlockPos pos : this.getOutline()) {
 			//renderIllusion(Blocks.LEAVES2.getDefaultState(), new ServerPos(pos, dimension));
+			
 			spawnParticles(EnumParticleTypes.TOWN_AURA, true, (new Vec3d(pos)).add(new Vec3d(0.5, 0.5, 0.5)), new Vec3d(1, 1, 1), dimension, 1);
 		}
 		if (!this.runningInstances.isEmpty()) {
@@ -1221,7 +1231,12 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 		/**
 		 * The tick the spellspace is currently on, 0 if the spellspace is not running
 		 */
-		protected int ticks = 0;
+		protected int spellTick = 0;
+		
+		/**
+		 * Used to prevent spell from running too quickly and overloading game
+		 */
+		protected int worldTicks = 0;
 		
 		/**
 		 * The positions in the spellspace which the Spell interpreted last tick, so that we don't make infinite loops by going back and forth
@@ -1307,7 +1322,7 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 			
 			cmp.setTag("MiniPositions", GMNBT.makeList(miniPositions, (p) -> {return NBTUtil.createPosTag(p.getPos());}));
 			
-			cmp.setInteger("Ticks", ticks);
+			cmp.setInteger("Ticks", spellTick);
 			if (runPos != null) {
 				cmp.setTag("RunPos", runPos.toNBT());
 			}
@@ -1352,7 +1367,7 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 			
 			prevPositions = GMNBT.createPosList(nbt.getTagList("PrevPositions", NBT.TAG_COMPOUND));
 			this.miniSpaces = GMNBT.createList(nbt.getTagList("MiniSpaces", NBT.TAG_LONG), ( tg) -> {return SpellSpaces.get().getById(((NBTTagLong)tg).getLong());} );
-			ticks = nbt.getInteger("Ticks");
+			spellTick = nbt.getInteger("Ticks");
 			if (nbt.hasKey("MagickingPos")) {
 				magickingPos = NBTUtil.getPosFromTag(nbt.getCompoundTag("MagickingPos"));
 			}
@@ -1383,15 +1398,15 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 		
 
 		public void setTicks(int ticks) {
-			this.ticks = ticks;
+			this.spellTick = ticks;
 		}
 		
 		public int getTicks() {
-			return ticks;
+			return spellTick;
 		}
 		
 		public boolean isRunning() {
-			return ticks != 0;
+			return spellTick != 0;
 		}
 		
 		/**
@@ -1745,6 +1760,7 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 				return;
 			}
 			
+			this.worldTicks = 0;
 
 			gatherPower();
 			
@@ -1818,15 +1834,17 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 					}
 				}
 			}
-			ticks++;
+			spellTick++;
 			
 		}
 		/**
 		 * Ticks the spell
 		 */
 		public void tick() {
-			if (this.ticks != 0) {
-				if (MinecraftForge.EVENT_BUS.post(new SpellSpaceTickingEvent(this, ticks))) {
+			worldTicks++;
+			if (worldTicks % 5 != 0) return;
+			if (this.spellTick != 0) {
+				if (MinecraftForge.EVENT_BUS.post(new SpellSpaceTickingEvent(this, spellTick))) {
 					printer.println("Spell space casting ticking was suspended");
 					return;
 				}
@@ -1839,7 +1857,7 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 					}
 				}
 				
-				printer.println("Ticking " + ticks);
+				printer.println("Ticking " + spellTick);
 				boolean didSomething = false;
 				
 				List<BlockPos> pp = new ArrayList<>(nextPositions);
@@ -1864,7 +1882,7 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 				}
 				
 				if (didSomething || !nextPositions.isEmpty() || !delayedPositions.isEmpty()) {
-					ticks++;
+					spellTick++;
 					
 					
 					if (didSomething) {
@@ -1897,7 +1915,7 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 			
 			inputsForTick.clear();
 			//lastTickInputs.clear();
-			ticks = 0;
+			spellTick = 0;
 			
 			for (ISpellComponent comp : getComponents()) {
 				comp.end(this, success, endPos);
@@ -1918,7 +1936,7 @@ public class SpellSpace implements ICapabilitySerializable<NBTTagCompound>{
 			SpellSpace.this.removeSpell(this);
 			String[] loggings = this.logger.split("\n");
 			for (String s : loggings) {
-				System.out.print(s);
+				//System.out.print(s);
 			}
 			System.out.println("Is still loaded? " + SpellSpace.this.isHeadLoaded());
 		}

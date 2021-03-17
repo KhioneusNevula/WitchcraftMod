@@ -3,6 +3,7 @@ package com.gm910.goeturgy.spells.components;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import com.gm910.goeturgy.spells.ioflow.MagicIO;
 import com.gm910.goeturgy.spells.spellspaces.SpellSpace.Spell;
@@ -23,12 +24,13 @@ import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
-import net.minecraft.entity.monster.EntityIllusionIllager;
+import net.minecraft.entity.Entity;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraftforge.client.event.RenderGameOverlayEvent.Pre;
@@ -81,6 +83,9 @@ public class MagicalSieve extends TileEntityBaseTickable implements ISpellCompon
 	@Override
 	public boolean accepts(EnumFacing facing, NBTTagCompound comp) {
 		if (this.isFilterInput(facing)) {
+			if ((comp.hasKey(MagicIO.SPECIES))) {
+				return true;
+			}
 			
 			return MagicIO.hasList(comp);
 		} else if (this.isGenericInput(facing)) {
@@ -119,10 +124,15 @@ public class MagicalSieve extends TileEntityBaseTickable implements ISpellCompon
 		}
 		
 		Pair<String, NBTTagList> filterPair = this.getSignificantList(inputs, filterSide);
-		
+		ResourceLocation species = null;
+		List<ResourceLocation> speciesList = new ArrayList<>();
 		if (filterPair == null) {
-			System.out.println("Sieve missing filter list and/or tag");
-			return null;
+			if (inputs.get(filterSide).hasKey(MagicIO.SPECIES)) {
+				species = MagicIO.getSpecies(inputs.get(filterSide));
+			} else {
+				System.out.println("Sieve missing filter list and/or tag");
+				return null;
+			}
 		}
 		String sigTag = filterPair.first();
 		NBTTagList filterList = filterPair.second();
@@ -134,18 +144,41 @@ public class MagicalSieve extends TileEntityBaseTickable implements ISpellCompon
 			return null;
 		}
 		if (!inputPair.first().equals(sigTag)) {
-			System.out.println("Conflicting filter and input data types: filter--" + sigTag + ", input--" + inputPair.first());
-			return null;
+			if (sigTag.equals(MagicIO.SPECIES) && inputPair.first().equals(MagicIO.ENTITY)) {
+				speciesList = MagicIO.getSpeciesList(inputs.get(filterSide));
+			} else {
+				System.out.println("Conflicting filter and input data types: filter--" + sigTag + ", input--" + inputPair.first());
+				return null;
+			}
 		}
 		NBTTagList realList = inputPair.second();
 		ArrayList<NBTBase> delegateRealList = new ArrayList<NBTBase>();
 		realList.forEach((e) -> delegateRealList.add(e) );
-		ArrayList<NBTBase> delegateFilterList = new ArrayList<NBTBase>();
-		filterList.forEach((e) -> delegateFilterList.add(e));
-		if (removeOnly) {
-			delegateRealList.removeAll(delegateFilterList);
-		} else {
-			delegateRealList.retainAll(delegateFilterList);
+		if (species != null || !speciesList.isEmpty()) {
+			List<ResourceLocation> allSpec = new ArrayList<>(speciesList);
+			if (species != null) allSpec.add(species);
+			List<NBTBase> secDelegate = new ArrayList<>(delegateRealList);
+			for (NBTBase bs : secDelegate) {
+				Entity e = MagicIO.entityfromid((UUID)MagicIO.DIRECT_GETTERS.get(MagicIO.ENTITY).apply(bs));
+				if (e == null) {delegateRealList.remove(bs);continue;}
+				if (MagicIO.getSpeciesRL(e) != null && allSpec.contains(MagicIO.getSpeciesRL(e))) {
+					if (removeOnly) {
+						delegateRealList.remove(bs);
+					}
+				} else {
+					if (!removeOnly) {
+						delegateRealList.remove(bs);
+					}
+				}
+			}
+		}
+		else {ArrayList<NBTBase> delegateFilterList = new ArrayList<NBTBase>();
+			filterList.forEach((e) -> delegateFilterList.add(e));
+			if (removeOnly) {
+				delegateRealList.removeAll(delegateFilterList);
+			} else {
+				delegateRealList.retainAll(delegateFilterList);
+			}
 		}
 		
 		NBTTagList realList2 = new NBTTagList();

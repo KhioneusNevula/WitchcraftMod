@@ -11,11 +11,19 @@ public interface IProxy {
 	public MinecraftServer getServer();
 	
 	public default boolean isClient() {
-		return getServer() == null;
+		return this instanceof ClientProxy;
+	}
+	
+	public default ServerProxy getAsServerProxy() {
+		return isServer() ? (ServerProxy) this : null;
+	}
+	
+	public default ClientProxy getAsClientProxy() {
+		return isClient() ? (ClientProxy) this : null;
 	}
 	
 	public default boolean isServer() {
-		return getServer() != null;
+		return this instanceof ServerProxy;
 	}
 	
 	public World getWorld(int d);
@@ -29,6 +37,10 @@ public interface IProxy {
 	}
 	
 	public default void postInit() {
+		
+	}
+	
+	public default void tick() {
 		
 	}
 }

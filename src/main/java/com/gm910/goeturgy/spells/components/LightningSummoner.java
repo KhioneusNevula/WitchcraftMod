@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.function.Supplier;
 
+import com.gm910.goeturgy.entity.EntityCelestialBeam;
 import com.gm910.goeturgy.spells.ioflow.MagicIO;
 import com.gm910.goeturgy.spells.spellspaces.SpellSpace.Spell;
 import com.gm910.goeturgy.spells.util.ISpellComponent;
@@ -13,6 +14,7 @@ import com.gm910.goeturgy.util.NonNullMap;
 import com.gm910.goeturgy.util.ServerPos;
 
 import net.minecraft.entity.effect.EntityLightningBolt;
+import net.minecraft.entity.item.EntityTNTPrimed;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumParticleTypes;
@@ -85,7 +87,8 @@ public class LightningSummoner extends TileEntityBaseTickable implements ISpellC
 			World world = DimensionManager.getWorld(spos.d);
 			if (world != null) {
 				System.out.println("Lightning at " + pos);
-				world.addWeatherEffect(new EntityLightningBolt(world, pos.getX(), pos.getY(), pos.getZ(), pos.equals(this.pos) ? true : false));
+				//world.addWeatherEffect(new EntityLightningBolt(world, pos.getX(), pos.getY(), pos.getZ(), pos.equals(this.pos) ? true : false));
+				EntityCelestialBeam.summonCelestialBeam(world, pos.getX(), pos.getY(), pos.getZ(), 4.0f, true);
 				Supplier<Double> rand = () -> ((new Random()).nextDouble() * 2 - 1);
 				
 				for (int i = 0; i < 20; i++) sp.getSpellSpace().spawnParticles(EnumParticleTypes.SPELL_INSTANT, false, new Vec3d(pos.getX() + 0.5 + rand.get(), pos.getY()+ 0.5 + rand.get(), pos.getZ() + 0.5 + rand.get()), new Vec3d(rand.get(), rand.get(), rand.get()), spos.d, 4);

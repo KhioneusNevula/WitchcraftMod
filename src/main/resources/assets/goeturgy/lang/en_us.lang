@@ -55,5 +55,8 @@ waystone.bound=%1$s at %2$s
 #DNA thing
 dnacollect.bound=Bound to %s
 
+#Damage
+death.celestialbeam=%s was struck down by a deadly light from the heavens
+
 #Misc
 null=%sNone

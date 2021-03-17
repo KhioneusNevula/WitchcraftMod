@@ -5,25 +5,27 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.nio.charset.Charset;
 
 import com.gm910.goeturgy.Goeturgy;
 import com.gm910.goeturgy.messages.types.IRunnableTask;
+import com.gm910.goeturgy.messages.types.TaskChangeGodMode;
+import com.gm910.goeturgy.messages.types.TaskKeyPress;
 import com.gm910.goeturgy.spells.spellspaces.SpellSpace;
-import com.gm910.goeturgy.util.GMReflection;
+import com.google.common.base.Charsets;
 
 import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.nbt.NBTBase;
+import net.minecraft.nbt.JsonToNBT;
+import net.minecraft.nbt.NBTException;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.JsonUtils;
-import net.minecraftforge.common.util.Constants.NBT;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import net.minecraftforge.fml.common.network.simpleimpl.SimpleNetworkWrapper;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class Messages {
 
@@ -31,63 +33,82 @@ public class Messages {
 	
 	public static final SimpleNetworkWrapper INSTANCE = NetworkRegistry.INSTANCE.newSimpleChannel(Goeturgy.MODID);
 
-	public static class IRunnableTaskMessage implements IMessage {
+	public static class TaskMessage implements IMessage {
 		  // A default constructor is always required
-		  public IRunnableTaskMessage(){}
+		  public TaskMessage(){}
 
-		  private IRunnableTask toSend;
+		  private String toSend;
 		  /**
 		   * Please send runnables by casting them to (Runnable & Serializable)
 		   * @param toSend
 		   */
-		  public IRunnableTaskMessage(IRunnableTask toSend) {
-		    this.toSend = toSend;
+		  public TaskMessage(IRunnableTask toSend) {
+		    this.toSend = toSend.serializeNBT().toString();
 		  }
 
 		  @Override public void toBytes(ByteBuf buf) {
-			buf.writeInt(serialize(toSend).length());
-			buf.writeCharSequence(serialize(toSend), Charset.defaultCharset());
+			  
+			buf.writeInt(toSend.length());
+			buf.writeCharSequence(toSend, Charsets.UTF_8);
+			
 		  }
 
 		  @Override public void fromBytes(ByteBuf buf) {
 		    // Reads the int back from the buf. Note that if you have multiple values, you must read in the same order you wrote.
 		     
 			  int len = buf.readInt();
-			 String dat = (String) buf.readCharSequence(len, Charset.defaultCharset());
-			 this.toSend = (IRunnableTask)deserialize(dat);
+			 toSend = ""+buf.readCharSequence(len, Charsets.UTF_8);
+			 //System.out.println(toSend);
 			 
 		  }
 		}
 	
-	public static class ServerMessageHandler implements IMessageHandler<IRunnableTaskMessage, IMessage> {
+	public static class ServerMessageHandler implements IMessageHandler<TaskMessage, IMessage> {
 		  // Do note that the default constructor is required, but implicitly defined in this case
 
-		  @Override public IMessage onMessage(IRunnableTaskMessage message, MessageContext ctx) {
+		  @Override public IMessage onMessage(TaskMessage message, MessageContext ctx) {
 		    EntityPlayerMP serverPlayer = ctx.getServerHandler().player;
-		    IRunnableTask check = message.toSend;
+		    NBTTagCompound nbt = null; 
+		    //System.out.println(message.toSend);
+		    try {
+		    	nbt = JsonToNBT.getTagFromJson(message.toSend);
+		    } catch (NBTException e) {
+
+				  System.err.println("Problem sending message to server : " + e);
+				  return null;
+		    }
+		    IRunnableTask check = IRunnableTask.getFromNBT(nbt);
 		    if (check == null) {
 
-				  System.err.println("Problem sending message to server");
+				  System.err.println("Problem sending message to server: " + nbt);
 		    	return null;
 		    }
 		    
-		    serverPlayer.getServerWorld().addScheduledTask(() -> SpellSpace.runServers.add((IRunnableTask)check));
+		    serverPlayer.getServerWorld().addScheduledTask(() -> SpellSpace.runServers.add(check));
 		    // No response packet
 		    return null;
 		  }
 	}
 	
-	public static class ClientMessageHandler implements IMessageHandler<IRunnableTaskMessage, IMessage> {
+	public static class ClientMessageHandler implements IMessageHandler<TaskMessage, IMessage> {
 		  // Do note that the default constructor is required, but implicitly defined in this case
 
-		  @Override public IMessage onMessage(IRunnableTaskMessage message, MessageContext ctx) {
+		  @Override public IMessage onMessage(TaskMessage message, MessageContext ctx) {
 			  
-			  
-			  IRunnableTask check = message.toSend;
-			  if (check == null) {
-				  System.err.println("Problem sending message to client");
-				  return null;
-			  }
+			  NBTTagCompound nbt = null;
+			    try {
+			    	nbt = JsonToNBT.getTagFromJson(message.toSend);
+			    } catch (NBTException e) {
+
+					  System.err.println("Problem sending message to server : " + e);
+					  return null;
+			    }
+			    IRunnableTask check = IRunnableTask.getFromNBT(nbt);
+			    if (check == null) {
+
+					  System.err.println("Problem sending message to server");
+			    	return null;
+			    }
 			  Minecraft.getMinecraft().addScheduledTask(() -> SpellSpace.runClients.add(check));
 		    // No response packet
 		    return null;
@@ -122,6 +143,14 @@ public class Messages {
 	 
 	 public static int returnNewID() {
 		 return id++;
+	 }
+	 
+	 public static void pressKey(int key) {
+		 INSTANCE.sendToServer(new TaskMessage(new TaskKeyPress(Minecraft.getMinecraft().player.getUniqueID(), key)));
+	 }
+	 
+	 public static void changeGodMode(EntityPlayerMP player, boolean yes) {
+		 INSTANCE.sendTo(new TaskMessage(new TaskChangeGodMode(yes)), player);
 	 }
 }
 

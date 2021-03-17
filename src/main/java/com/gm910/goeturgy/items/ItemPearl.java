@@ -136,6 +136,7 @@ public class ItemPearl extends ItemBase {
 				space.start(new ServerPos(playerIn.getPosition(), worldIn), new HashMap<>());
 			/*else
 				System.out.println("Cannot load spellspace!");*/
+				return new ActionResult<ItemStack>(EnumActionResult.SUCCESS, playerIn.getHeldItem(handIn));
 		}
 		
 		return super.onItemRightClick(worldIn, playerIn, handIn);

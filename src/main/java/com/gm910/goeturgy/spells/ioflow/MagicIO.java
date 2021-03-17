@@ -146,6 +146,13 @@ public abstract class MagicIO {
 		return GameData.getEntityRegistry().getValue(l) != null ? GameData.getEntityRegistry().getValue(l).newInstance(world) : null;
 	}
 	
+	public static ResourceLocation getSpeciesRL(Entity e) {
+		//TODO if (e instanceof <>) {
+			
+		//} else
+		return GameData.getEntityRegistry().getKey(GameData.getEntityClassMap().get(e.getClass()));
+	}
+	
 	public static int entityClass(Class<? extends Entity> id) {
 		return GameData.getEntityRegistry().getID(GameData.getEntityClassMap().get(id));
 	}

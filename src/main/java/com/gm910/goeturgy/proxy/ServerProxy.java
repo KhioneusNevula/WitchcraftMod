@@ -1,7 +1,7 @@
 package com.gm910.goeturgy.proxy;
 
 import com.gm910.goeturgy.messages.Messages;
-import com.gm910.goeturgy.messages.Messages.IRunnableTaskMessage;
+import com.gm910.goeturgy.messages.Messages.TaskMessage;
 import com.gm910.goeturgy.messages.Messages.ServerMessageHandler;
 
 import net.minecraft.item.Item;
@@ -26,6 +26,6 @@ public class ServerProxy implements IProxy {
 	
 	@Override
 	public void preInit() {
-		Messages.INSTANCE.registerMessage(ServerMessageHandler.class, IRunnableTaskMessage.class, Messages.returnNewID(), Side.SERVER);
+		
 	}
 }

@@ -3,12 +3,14 @@ package com.gm910.goeturgy.spells.components;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.gm910.goeturgy.spells.ioflow.MagicIO;
 import com.gm910.goeturgy.spells.spellspaces.SpellSpace.Spell;
 import com.gm910.goeturgy.spells.util.ISpellComponent;
 import com.gm910.goeturgy.tileentities.TileEntityBaseTickable;
 import com.gm910.goeturgy.util.NonNullMap;
 import com.gm910.goeturgy.util.ServerPos;
 
+import net.minecraft.entity.Entity;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumFacing;
 
@@ -54,7 +56,25 @@ public class InitiatorPearlBlock extends TileEntityBaseTickable implements ISpel
 	@Override
 	public NonNullMap<EnumFacing, NBTTagCompound> activate(Spell sp, ServerPos modifiedPos, NonNullMap<EnumFacing, NBTTagCompound> map) {
 		System.out.println("Pearl block activated");
-		return new NonNullMap<>(NBTTagCompound::new);
+		
+		return new NonNullMap<EnumFacing, NBTTagCompound>(() -> {
+			NBTTagCompound cmp = new NBTTagCompound();
+			MagicIO.writePosToCompound(modifiedPos, cmp);
+			
+			return cmp;
+		}).generateValues(EnumFacing.VALUES);
+	}
+	
+	@Override
+	public NonNullMap<EnumFacing, NBTTagCompound> activate(Spell spell, Entity modifiedEntity,
+			NonNullMap<EnumFacing, NBTTagCompound> inputs) {
+		System.out.println("Pearl block activated");
+		return new NonNullMap<EnumFacing, NBTTagCompound>(() -> {
+			NBTTagCompound cmp = new NBTTagCompound();
+			MagicIO.writeEntityToCompound(modifiedEntity, cmp);
+			
+			return cmp;
+		}).generateValues(EnumFacing.VALUES);
 	}
 
 	@Override

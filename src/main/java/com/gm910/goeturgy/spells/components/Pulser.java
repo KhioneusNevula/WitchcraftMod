@@ -76,7 +76,7 @@ public class Pulser extends TileEntityBaseTickable implements ISpellComponent, I
 			this.tagType = pa.first();
 			this.data = pa.second();
 			if (data == null || tagType == null) {
-				System.out.println("Pulser data: " + data + " ,  pulser tagtype : " + tagType);
+				System.out.println("Pulser failed with data: " + data + " ,  pulser tagtype : " + tagType);
 				end();
 				return null;
 			} else if (data.hasNoTags()){

@@ -20,5 +20,4 @@ public interface ISpellObject {
 	}
 	
 	public World getWorld();
-	
 }

@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.UUID;
 
 import com.gm910.goeturgy.init.ItemInit;
-import com.gm910.goeturgy.items.ItemDNACollector;
+import com.gm910.goeturgy.items.ItemIdentityCollector;
 import com.gm910.goeturgy.spells.ioflow.MagicIO;
 import com.gm910.goeturgy.spells.spellspaces.SpellSpace;
 import com.gm910.goeturgy.spells.spellspaces.SpellSpace.Spell;
@@ -41,13 +41,13 @@ public class PoppetMaker extends TileEntityChest implements ISpellComponent, ISy
 		//System.out.println("Poppetmaker does not accept any compound, especially not compound " + comp);
 		if (comp.hasKey(MagicIO.toList(MagicIO.ITEM))) {
 			for (ItemStack stack : MagicIO.getItemStackList(comp)) {
-				if (ItemDNACollector.getLinkedUUID(stack) == null) {
+				if (ItemIdentityCollector.getLinkedUUID(stack) == null) {
 					return false;
 				}
 			}
 			return true;
 		} else if (comp.hasKey(MagicIO.ITEM)) {
-			if (ItemDNACollector.getLinkedUUID(MagicIO.getItemStack(comp)) == null) {
+			if (ItemIdentityCollector.getLinkedUUID(MagicIO.getItemStack(comp)) == null) {
 				return false;
 			}
 			return true;
@@ -73,8 +73,8 @@ public class PoppetMaker extends TileEntityChest implements ISpellComponent, ISy
 			NBTTagCompound cmp = new NBTTagCompound();
 			List<UUID> ens = new ArrayList<>();
 			for (ItemStack stack : super.getItems()) {
-				if (ItemDNACollector.getLinkedUUID(stack) != null) {
-					ens.add(ItemDNACollector.getLinkedUUID(stack));
+				if (ItemIdentityCollector.getLinkedUUID(stack) != null) {
+					ens.add(ItemIdentityCollector.getLinkedUUID(stack));
 				}
 			}
 			//super.getItems().forEach((e) -> ens.add(ItemDNACollector.getLinkedUUID(e)) );
@@ -116,7 +116,7 @@ public class PoppetMaker extends TileEntityChest implements ISpellComponent, ISy
 			}
 		}
 		List<UUID> uuids = new ArrayList<>();
-		stacks.forEach((e) -> uuids.add(ItemDNACollector.getLinkedUUID(e)) );
+		stacks.forEach((e) -> uuids.add(ItemIdentityCollector.getLinkedUUID(e)) );
 
 		NonNullMap<EnumFacing, NBTTagCompound> so = new NonNullMap<>(() -> {
 			NBTTagCompound cmp = new NBTTagCompound();
@@ -244,7 +244,7 @@ public class PoppetMaker extends TileEntityChest implements ISpellComponent, ISy
 	@Override
 	public boolean isItemValidForSlot(int index, ItemStack stack) {
 		
-		return stack.getItem() == ItemInit.DNA_COLLECTOR;
+		return stack.getItem() == ItemInit.IDENTITY_COLLECTOR;
 	}
 
 	/*@Override

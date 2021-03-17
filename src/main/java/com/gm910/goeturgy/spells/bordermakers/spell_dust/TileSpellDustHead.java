@@ -25,6 +25,9 @@ public class TileSpellDustHead extends TileSpellDust implements IObjectMouseover
 	
 	public static int HEIGHT = 10;
 
+	private ShapeMaker shapeMaker = null;
+	private DustPulse endPulse = null;
+	public final DustPulse FAILED = new DustPulse(new BlockPos(0,0,0));
 	
 	@Override
 	public void update() {
@@ -35,6 +38,12 @@ public class TileSpellDustHead extends TileSpellDust implements IObjectMouseover
 				SpellSpaces.get().forEach((d) -> {
 					//System.out.println(d.getHeadPos());
 				});
+				if (shapeMaker == null) {
+					shapeMaker = new ShapeMaker(TOLERANCE);
+					shapeMaker.start();
+				} else {
+					endPulse = shapeMaker.tick();
+				/*
 				List<DustPulse> pulses = new ArrayList<>();
 				DustPulse pulse1 = new DustPulse(pos);
 				DustPulse endPulse = null;
@@ -54,11 +63,18 @@ public class TileSpellDustHead extends TileSpellDust implements IObjectMouseover
 					if (endPulse != null) {
 						break;
 					}
-				}
-				if (endPulse != null) {
-					SpellSpaces.get().createSpellSpace(world.provider.getDimension(), HEIGHT, this.pos, endPulse.visited, endPulse.visited);
-				} else {
-					System.out.println("Failed to generate spellspace");
+				}*/
+				
+					if (endPulse != null) {
+						if (endPulse == FAILED) {
+
+							System.out.println("Failed to generate spellspace");
+						} else {
+							SpellSpaces.get().createSpellSpace(world.provider.getDimension(), HEIGHT, this.pos, endPulse.visited, endPulse.visited);
+						}
+
+						shapeMaker = null;
+					}
 				}
 			} else {
 				//System.out.println("Hasspellspace");
@@ -96,6 +112,55 @@ public class TileSpellDustHead extends TileSpellDust implements IObjectMouseover
 	
 	public TileSpellDust getDust(BlockPos pos) {
 		return world.getTileEntity(pos) instanceof TileSpellDust ? (TileSpellDust)world.getTileEntity(pos) : null;
+	}
+	
+	public class ShapeMaker {
+		
+		public List<BlockPos> visited;
+		public int tickNumber;
+		List<DustPulse> pulses;
+		DustPulse pulse1;
+		DustPulse endPulse;
+		int tolerance;
+		TileSpellDustHead head;
+		
+		public ShapeMaker(int tolerance) {
+			tickNumber = 0;
+			visited = new ArrayList<BlockPos>();
+			pulses = new ArrayList<>();
+			head = TileSpellDustHead.this;
+			pulse1 = new DustPulse(head.pos);
+			endPulse = null;
+			pulses.add(pulse1);
+		}
+		
+		public void start() {
+			tickNumber = 1;
+		}
+		
+		/**
+		 * Returns the pulse known as 'end', if this is not null we are successful
+		 * @return
+		 */
+		public DustPulse tick() {
+			if (tickNumber > TOLERANCE) {
+				return FAILED;
+			}
+			List<DustPulse> ps = new ArrayList<>(pulses);
+			for (DustPulse p : ps) {
+				int end = p.update(pulses);
+				if (end == 0) {
+					pulses.remove(p);
+					continue;
+				} else if (end == 2) {
+					endPulse = p;
+					break;
+				}
+			}
+			
+			tickNumber++;
+			return endPulse;
+		}
 	}
 	
 	public class DustPulse {

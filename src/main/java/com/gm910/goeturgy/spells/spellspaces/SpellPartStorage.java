@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 
+import com.gm910.goeturgy.spells.SpecialSpellComponentRegistry;
 import com.gm910.goeturgy.spells.util.ISpellBorder;
 import com.gm910.goeturgy.spells.util.ISpellChainListener;
 import com.gm910.goeturgy.spells.util.ISpellComponent;
@@ -44,6 +45,11 @@ public class SpellPartStorage {
 	}
 	
 	public ISpellComponent getComponent(BlockPos pos) {
+		if (this.getInstance(TileEntity.class, pos) != null) {
+			if (SpecialSpellComponentRegistry.get(this.getInstance(TileEntity.class, pos).getClass()) != null) {
+				return SpecialSpellComponentRegistry.get(this.getInstance(TileEntity.class, pos).getClass());
+			}
+		}
 		return getInstance(ISpellComponent.class, pos);
 	}
 	

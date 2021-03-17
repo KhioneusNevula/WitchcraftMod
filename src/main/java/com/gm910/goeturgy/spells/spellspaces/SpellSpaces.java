@@ -117,13 +117,28 @@ public class SpellSpaces extends WorldSavedData implements Collection<SpellSpace
 	}
 	
 	public SpellSpace getByPosition(ServerPos position) {
-		
+		List<SpellSpace> spsp = new ArrayList<>();
 		for (SpellSpace sp : spellSpacesByWorld.get(position.d)) {
 			if (sp.getInnerSpace().contains(position)) {
-				return sp;
+				spsp.add(sp);
 			}
 		}
-		return null;
+		
+		List<Integer> sizes = new ArrayList<>();
+		for (SpellSpace s : spsp) {
+			sizes.add(s.shape.size());
+		}
+		
+		if (spsp.isEmpty()) return null;
+		
+		SpellSpace smallest = spsp.get(0);
+		for (SpellSpace space1 : spsp) {
+			if (space1.shape.size() > smallest.shape.size()) {
+				smallest = space1;
+			}
+		}
+		
+		return smallest;
 	}
 	
 	public SpellSpace getByHeadPos(ServerPos headPos) {
@@ -192,9 +207,13 @@ public class SpellSpaces extends WorldSavedData implements Collection<SpellSpace
 	}
 	
 	public static SpellSpaces get() {
+		if (Goeturgy.instance.spellSpaces != null) {
+			return Goeturgy.instance.spellSpaces;
+		}
 		if (Goeturgy.proxy.getServer() == null) {
 			throw new ReportedException(CrashReport.makeCrashReport(new IllegalAccessException("No SpellSpace registry is accessible because no server exists"), "Someone tried to access the spellspace registry without a server"));
 		}
+		
 		return get(FMLCommonHandler.instance().getMinecraftServerInstance().getWorld(0));
 	}
 

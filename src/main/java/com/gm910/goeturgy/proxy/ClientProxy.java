@@ -1,9 +1,8 @@
 package com.gm910.goeturgy.proxy;
 
 import com.gm910.goeturgy.init.TileInit;
-import com.gm910.goeturgy.messages.Messages;
-import com.gm910.goeturgy.messages.Messages.ClientMessageHandler;
-import com.gm910.goeturgy.messages.Messages.IRunnableTaskMessage;
+import com.gm910.goeturgy.keyhandling.ModKey;
+import com.gm910.goeturgy.registering.RenderHandler;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
@@ -11,10 +10,12 @@ import net.minecraft.item.Item;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.World;
 import net.minecraftforge.client.model.ModelLoader;
+import net.minecraftforge.fml.client.registry.ClientRegistry;
 import net.minecraftforge.fml.common.FMLCommonHandler;
-import net.minecraftforge.fml.relauncher.Side;
 
 public class ClientProxy implements IProxy {
+	
+	public boolean isGodMode;
 
 	@Override
 	public void registerItemRenderer(Item item, int meta, String id) {
@@ -36,8 +37,16 @@ public class ClientProxy implements IProxy {
 	@Override
 	public void preInit() {
 		// TODO Auto-generated method stub
-		Messages.INSTANCE.registerMessage(ClientMessageHandler.class, IRunnableTaskMessage.class, Messages.returnNewID(), Side.CLIENT);
+		
 		TileInit.registerSpecialRenderers();
+		RenderHandler.registerEntRenderers();
 	}
 	
+	@Override
+	public void init() {
+	    
+        for (ModKey key : ModKey.keys.keySet()) {
+        	ClientRegistry.registerKeyBinding(ModKey.keys.get(key));
+        }
+	}
 }
